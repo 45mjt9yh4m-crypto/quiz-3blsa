@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quiz 3BLSA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: game show in un laboratorio di scienze, energico, leggibile dal fondo dell'aula
+   IDEA: ogni risposta è una casella della tavola periodica, la LIM è il palco
+   PICTURE: il gioco stesso — domanda enorme, quattro caselle colorate, anello del tempo
+   COLOUR and TYPE: palco scuro viola-carbone, quattro colori-risposta pieni, Sora
+   LAYOUT: una colonna centrata; enorme sulla LIM, a misura di pollice sul telefono */
+:root{color-scheme:light dark;--bg:light-dark(#f5f4fa,#110f19);--panel:light-dark(#fff,#1c1928);--ink:light-dark(#16141f,#f3f1fa);--mute:light-dark(#5d5a70,#a9a5bd);--line:light-dark(#dedbea,#2f2b40);
+--a0:#e5323e;--a1:#1f6ce6;--a2:#e59a07;--a3:#7b3fd8;--C:#1f6ce6;--B:#d8304c;--A:#7b3fd8;--ok:#14a05a}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+body.stage{--bg:#15121f;--panel:#211d30;--ink:#f6f4fc;--mute:#b3aec8;--line:#34304a;color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Sora,system-ui,sans-serif;overflow-x:clip;min-height:100vh;transition:background .4s}
+header{display:flex;align-items:center;gap:12px;padding:12px max(4vw,16px);border-bottom:1px solid var(--line)}
+.el{width:46px;height:46px;border:2px solid var(--ink);border-radius:6px;display:grid;place-items:center;font-weight:800;font-size:19px;position:relative;flex:none}
+.el small{position:absolute;top:2px;left:4px;font-size:9px;font-weight:500}
+header b{font-size:18px}header .sub{color:var(--mute);font-size:14px}
+.hbtns{margin-left:auto;display:flex;gap:6px}
+.ib{width:44px;height:44px;border-radius:10px;border:1.5px solid var(--line);background:transparent;color:var(--ink);font-size:18px;cursor:pointer}
+main{max-width:1200px;margin:0 auto;padding:clamp(16px,3vw,36px) max(4vw,16px)}
+h1{font-size:clamp(26px,4.4vw,52px);line-height:1.08;margin:0 0 18px;text-wrap:balance}
+h2{font-size:24px;margin:0 0 14px}
+p{margin:0 0 12px}.mute{color:var(--mute)}
+.home{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px;margin-top:20px}
+.big{border:0;border-radius:16px;padding:24px 22px;text-align:left;font:inherit;color:#fff;cursor:pointer;min-height:150px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.big strong{font-size:26px;line-height:1.15}.big:disabled{opacity:.45;cursor:not-allowed}
+.big::after{content:attr(data-sym);position:absolute;right:14px;bottom:-14px;font-size:110px;opacity:.18;font-weight:800}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:clamp(16px,2.5vw,28px)}
+.field{margin-bottom:18px}.field>span{display:block;font-weight:700;margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips label{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:999px;padding:9px 14px;cursor:pointer;min-height:44px}
+.chips input{width:18px;height:18px;accent-color:var(--a1)}
+input[type=text],input[type=number],select{font:inherit;font-size:16px;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);width:100%;max-width:340px}
+.btn{font:inherit;font-weight:700;font-size:17px;border:0;border-radius:12px;padding:13px 24px;min-height:50px;background:var(--ink);color:var(--bg);cursor:pointer}
+.btn.alt{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.go{background:var(--ok);color:#fff}
+.btn:disabled{opacity:.4}
+kbd{font:600 12px Sora,system-ui,sans-serif;border:1px solid currentColor;border-radius:4px;padding:0 5px;opacity:.7;margin-left:6px}
+:focus-visible{outline:3px solid var(--a1);outline-offset:2px}
+.code{font-size:clamp(64px,14vw,150px);font-weight:800;letter-spacing:.1em;line-height:1;display:flex;gap:.12em}
+.code span{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:.08em .18em}
+.players{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 24px}
+.players span{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 13px;font-weight:700;animation:pop .35s ease}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:14px}
+.tag{color:#fff;border-radius:7px;padding:5px 11px;font-weight:700;font-size:14px}
+.ring{margin-left:auto;width:74px;height:74px;position:relative;flex:none}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:8}.ring .bgc{stroke:var(--line)}.ring .fg{stroke:var(--ink);stroke-linecap:round;transition:stroke-dashoffset .2s linear,stroke .3s}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:26px;font-variant-numeric:tabular-nums}
+.ring.hot .fg{stroke:var(--a0)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.tile{position:relative;border:0;border-radius:14px;color:#fff;font:inherit;font-weight:700;font-size:clamp(17px,2.2vw,27px);line-height:1.2;text-align:left;padding:18px 18px 18px 70px;min-height:100px;display:flex;align-items:center;cursor:default;transition:opacity .35s,transform .35s,filter .35s;animation:rise .45s backwards}
+.tile:nth-child(2){animation-delay:.08s}.tile:nth-child(3){animation-delay:.16s}.tile:nth-child(4){animation-delay:.24s}
+@keyframes rise{from{transform:translateY(16px);opacity:0}}
+button.tile{cursor:pointer}button.tile:active{transform:scale(.97)}
+.tile .s{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:42px;height:42px;border:2px solid rgba(255,255,255,.7);border-radius:6px;display:grid;place-items:center;font-size:19px}
+.tile .n{position:absolute;right:12px;top:8px;font-size:15px;background:rgba(0,0,0,.25);border-radius:6px;padding:1px 8px}
+.tile.off{opacity:.22;filter:saturate(.4)}.tile.ok{box-shadow:0 0 0 5px var(--ink);transform:scale(1.02)}
+.t0{background:var(--a0)}.t1{background:var(--a1)}.t2{background:var(--a2)}.t3{background:var(--a3)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:20px}
+.rev{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-top:18px}
+.rev.v{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
+.vid{position:relative;background:#000;border-radius:14px;overflow:hidden;aspect-ratio:16/9}
+.vid video{width:100%;height:100%;object-fit:contain;display:block}
+.vid .play{position:absolute;inset:0;border:0;background:rgba(0,0,0,.45);color:#fff;font:800 22px Sora;cursor:pointer}
+.expl{font-size:clamp(17px,1.7vw,22px);border-left:5px solid var(--ok);padding:6px 0 6px 16px;margin:0}
+.dist{display:grid;gap:6px;margin-top:4px}
+.dist div{display:grid;grid-template-columns:28px minmax(0,1fr) 36px;gap:8px;align-items:center;font-weight:700}
+.dist i{display:block;height:16px;border-radius:5px;transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.fast{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-weight:700}
+.lb{display:grid;gap:8px;max-width:900px}
+.lb .r{display:grid;grid-template-columns:2.4em minmax(0,1fr) auto auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-weight:700;animation:rise .4s backwards}
+.lb .r:nth-child(1){border-color:var(--a2);box-shadow:0 0 0 2px var(--a2)}
+.lb .pos{font-size:22px;font-weight:800}
+.lb .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(17px,2vw,24px)}
+.lb .pt{font-size:clamp(18px,2vw,26px);font-variant-numeric:tabular-nums}
+.lb .dl{font-size:14px;color:var(--mute);white-space:nowrap}.up{color:var(--ok)!important}.dn{color:var(--a0)!important}
+.podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:end;max-width:680px;margin:10px auto 26px;text-align:center}
+.podium>div{border-radius:12px 12px 0 0;color:#fff;padding:12px 6px;font-weight:800;display:flex;flex-direction:column;justify-content:flex-end;animation:grow .9s cubic-bezier(.2,.9,.3,1.2) backwards;transform-origin:bottom}
+.podium>div:nth-child(1){animation-delay:.5s}.podium>div:nth-child(3){animation-delay:1s}
+@keyframes grow{from{transform:scaleY(0)}}
+.podium b{font-size:34px}.podium .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px}
+.count{display:grid;place-items:center;min-height:56vh;text-align:center}
+.count .num{font-size:clamp(120px,26vw,260px);font-weight:800;line-height:1;animation:pulse 1s ease infinite}
+@keyframes pulse{0%{transform:scale(1.25);opacity:0}25%{opacity:1;transform:scale(1)}}
+.ph .tile{min-height:112px;font-size:18px;padding-left:66px}
+.big-msg{text-align:center;padding:36px 10px}.big-msg .e{font-size:72px;font-weight:800;line-height:1.1}
+.gain{font-size:44px;font-weight:800;color:var(--ok);animation:pop .5s ease}
+.streak{display:inline-block;background:var(--a2);color:#16141f;border-radius:999px;padding:4px 14px;font-weight:800;margin-top:6px}
+.warn{background:light-dark(#fff1d1,#3b2f12);color:var(--ink);border-radius:12px;padding:12px 14px;margin:12px 0}
+.final{background:var(--a2);color:#16141f;border-radius:10px;padding:6px 14px;font-weight:800;animation:pulse 1.2s ease infinite}
+.clips .it{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 14px;padding:14px 0;border-top:1px solid var(--line)}
+.clips .ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.clips input[type=number]{width:96px}
+.clips video{width:min(100%,360px);border-radius:10px;background:#000;display:block;margin-top:8px}
+.ok-badge{color:var(--ok);font-weight:800}
+.file{position:relative;overflow:hidden;display:inline-flex}
+.file input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.qh{display:grid;grid-template-columns:minmax(0,1fr) clamp(150px,22vw,250px);gap:20px;align-items:center;margin-bottom:18px}.qh h1{margin:0}
+.pic{border-radius:16px;aspect-ratio:5/4;display:grid;place-items:center;padding:12px;animation:pop .5s ease;position:relative;overflow:hidden}
+.pic::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.25),transparent 60%)}
+.pic svg{width:100%;height:100%;position:relative}
+@media(max-width:600px){.qh{grid-template-columns:minmax(0,1fr) 110px;gap:12px}}
+canvas#conf{position:fixed;inset:0;pointer-events:none;width:100%;height:100%;z-index:9}
+a{color:inherit}
+@media(max-width:760px){.rev.v{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.grid{grid-template-columns:minmax(0,1fr)}.tile{min-height:74px}.ring{width:60px;height:60px}.lb .r{grid-template-columns:2em minmax(0,1fr) auto}.lb .dl{display:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header><div class="el"><small>3B</small>Qz</div><div><b>Quiz di Scienze</b><br><span class="sub">3BLSA · chimica, biologia e attualità</span></div>
+<div class="hbtns"><button class="ib" id="snd" title="Suoni" aria-label="Suoni on/off">🔊</button><button class="ib" id="fs" title="Schermo intero" aria-label="Schermo intero">⛶</button></div></header>
+<main id="app"></main>
+<canvas id="conf" hidden></canvas>
+<script>
+{
+const Q=[
+// [categoria, livello, domanda, [corretta, sbagliate...], spiegazione, ricerca video]
+["C",1,"Quale particella dell'atomo ha carica negativa?",["Elettrone","Protone","Neutrone","Nucleo"],"Gli elettroni (−) stanno attorno al nucleo, dove ci sono protoni (+) e neutroni (neutri)."],
+["C",1,"Quanti elettroni può contenere al massimo un orbitale?",["2","1","4","8"],"Per il principio di Pauli un orbitale ospita al massimo 2 elettroni, con spin opposto."],
+["C",1,"Le righe orizzontali della tavola periodica si chiamano…",["Periodi","Gruppi","Blocchi","Famiglie"],"Le righe sono i periodi, le colonne i gruppi."],
+["C",1,"La luce ha una doppia natura: si comporta come…",["Onda e particella","Solo onda","Solo particella","Né onda né particella"],"La luce è un'onda elettromagnetica ma è fatta anche di pacchetti di energia: i fotoni."],
+["C",1,"Quanti elettroni di valenza ha il carbonio?",["4","2","6","8"],"Il carbonio (Z = 6) è 1s² 2s² 2p²: 4 elettroni nel livello esterno."],
+["C",1,"In un legame covalente gli atomi…",["Condividono elettroni","Si scambiano protoni","Perdono tutti gli elettroni","Si respingono"],"Nel legame covalente due atomi mettono in comune una o più coppie di elettroni."],
+["C",1,"Perché i gas nobili reagiscono pochissimo?",["Hanno il livello esterno completo","Sono molto pesanti","Non hanno elettroni","Sono radioattivi"],"Hanno l'ottetto completo, una configurazione molto stabile."],
+["C",2,"Qual è la configurazione elettronica del sodio (Na, Z = 11)?",["1s² 2s² 2p⁶ 3s¹","1s² 2s² 2p⁷","1s² 2s² 2p⁶ 3p¹","1s² 2s⁸ 3s¹"],"Si riempiono 1s, 2s, 2p (10 elettroni), poi l'undicesimo va in 3s."],
+["C",2,"Scendendo lungo un gruppo, il raggio atomico…",["Aumenta","Diminuisce","Resta uguale","Si dimezza"],"Ogni periodo aggiunge un livello energetico, quindi l'atomo diventa più grande."],
+["C",2,"Che legame tiene insieme Na e Cl nel sale da cucina?",["Ionico","Covalente puro","Metallico","A idrogeno"],"Na cede un elettrone a Cl: gli ioni Na⁺ e Cl⁻ si attraggono."],
+["C",2,"Qual è l'elemento più elettronegativo?",["Fluoro","Ossigeno","Sodio","Elio"],"Il fluoro ha elettronegatività 4,0 nella scala di Pauling, la più alta di tutte."],
+["C",2,"Il legame metallico si descrive come…",["Ioni positivi in un «mare» di elettroni","Una coppia di elettroni condivisa tra due atomi","Ioni + e − alternati","Un legame tra molecole diverse"],"Gli elettroni di valenza sono liberi di muoversi tra gli ioni: per questo i metalli conducono."],
+["C",2,"Lungo un periodo, da sinistra a destra, l'energia di ionizzazione in generale…",["Aumenta","Diminuisce","Resta uguale","Si annulla"],"Cresce la carica del nucleo, che trattiene gli elettroni più forte."],
+["C",2,"Che cos'è un orbitale?",["La zona dove è massima la probabilità di trovare l'elettrone","L'orbita circolare fissa dell'elettrone","Il nucleo dell'atomo","Un tipo di legame"],"Con la meccanica quantistica non si parla più di orbite precise ma di probabilità di presenza."],
+["C",2,"La tavola periodica moderna ordina gli elementi per…",["Numero atomico","Massa atomica","Ordine alfabetico","Anno di scoperta"],"Mendeleev usava la massa atomica; oggi si usa il numero atomico Z."],
+["C",3,"Quale numero quantico indica la forma dell'orbitale?",["Secondario (l)","Principale (n)","Magnetico (m)","Di spin (ms)"],"l = 0, 1, 2, 3 corrisponde agli orbitali s, p, d, f."],
+["C",3,"Secondo la teoria VSEPR, che forma ha la molecola d'acqua?",["Angolata","Lineare","Tetraedrica","Trigonale planare"],"Le due coppie solitarie dell'ossigeno spingono i legami: angolo di circa 104,5°."],
+["C",3,"Quale molecola è apolare anche se ha legami polari?",["CO₂","H₂O","NH₃","HCl"],"La CO₂ è lineare: i due dipoli sono opposti e si annullano."],
+["C",3,"Nel modello di Bohr, quando l'elettrone scende a un livello più basso…",["Emette un fotone","Assorbe energia","Esce dall'atomo","Diventa un protone"],"La differenza di energia tra i livelli esce come luce: da qui gli spettri a righe."],
+["C",3,"Che forma ha la molecola di metano CH₄?",["Tetraedrica","Planare quadrata","Lineare","Piramidale"],"Quattro coppie di legame si allontanano il più possibile: angoli di 109,5°."],
+["C",3,"Due elettroni nello stesso orbitale devono avere…",["Spin opposto","Lo stesso spin","Carica diversa","Massa diversa"],"È il principio di esclusione di Pauli."],
+["B",1,"Quale camera del cuore pompa il sangue in tutto il corpo?",["Ventricolo sinistro","Atrio destro","Atrio sinistro","Ventricolo destro"],"Il ventricolo sinistro spinge il sangue nell'aorta: ha la parete più spessa."],
+["B",1,"Quali cellule del sangue trasportano l'ossigeno?",["Globuli rossi","Globuli bianchi","Piastrine","Linfociti"],"I globuli rossi contengono emoglobina, che lega l'ossigeno."],
+["B",1,"Le arterie portano il sangue…",["Dal cuore verso il corpo","Dal corpo verso il cuore","Solo ai polmoni","Solo al cervello"],"Arterie: in uscita dal cuore. Vene: di ritorno al cuore."],
+["B",1,"A cosa servono le piastrine?",["Alla coagulazione del sangue","Al trasporto dell'ossigeno","A combattere i batteri","Alla digestione"],"Le piastrine chiudono le ferite formando il coagulo."],
+["B",1,"Un insieme di organi che lavorano insieme forma…",["Un apparato (o sistema)","Un tessuto","Una cellula","Un organulo"],"Cellule → tessuti → organi → sistemi e apparati."],
+["B",2,"Come si chiama la capacità di mantenere stabili le condizioni interne del corpo?",["Omeostasi","Metabolismo","Osmosi","Rigenerazione"],"Esempi: temperatura, glicemia, pH del sangue."],
+["B",2,"In quali vasi avvengono gli scambi tra sangue e tessuti?",["Capillari","Arterie","Vene","Aorta"],"I capillari hanno pareti spesse una sola cellula."],
+["B",2,"Quale di questi NON è uno dei quattro tessuti fondamentali?",["Vascolare","Epiteliale","Connettivo","Muscolare"],"I quattro tessuti sono epiteliale, connettivo, muscolare e nervoso."],
+["B",2,"Il sangue è un tipo di tessuto…",["Connettivo","Epiteliale","Muscolare","Nervoso"],"È un connettivo fluido: cellule immerse in una matrice liquida, il plasma."],
+["B",2,"A cosa servono le valvole cardiache?",["Impediscono il ritorno indietro del sangue","Fanno partire il battito","Filtrano il sangue","Producono globuli rossi"],"Fanno scorrere il sangue in un solo verso."],
+["B",2,"Quale proteina dei globuli rossi lega l'ossigeno?",["Emoglobina","Insulina","Cheratina","Clorofilla"],"L'emoglobina contiene ferro, che lega l'ossigeno."],
+["B",2,"Il plasma è circa quale parte del sangue?",["Il 55%","Il 10%","Il 30%","Il 90%"],"Circa 55% plasma e 45% elementi figurati."],
+["B",2,"Che cos'è l'aterosclerosi?",["Placche che restringono le arterie","Un'infezione del cuore","La mancanza di globuli rossi","La rottura di una vena"],"Le placche di grassi riducono il flusso e possono causare infarto o ictus."],
+["B",2,"Le cellule staminali del midollo osseo producono…",["Le cellule del sangue","I neuroni","Le cellule della pelle","Gli ormoni"],"Sono staminali emopoietiche: da loro nascono globuli rossi, bianchi e piastrine."],
+["B",3,"Quali cellule staminali possono dare origine a tutte le cellule, anche agli annessi embrionali?",["Totipotenti","Pluripotenti","Multipotenti","Unipotenti"],"Lo zigote e le primissime cellule dell'embrione sono totipotenti."],
+["B",3,"Come si chiama la contrazione dei ventricoli?",["Sistole","Diastole","Fibrillazione","Ipertensione"],"Sistole = contrazione, diastole = rilassamento."],
+["B",3,"Qual è il «pacemaker naturale» del cuore?",["Il nodo senoatriale","Il nodo atrioventricolare","La valvola mitrale","L'aorta"],"Si trova nell'atrio destro e fa partire ogni battito."],
+["B",3,"Da quale camera del cuore parte la circolazione polmonare?",["Ventricolo destro","Ventricolo sinistro","Atrio sinistro","Atrio destro"],"Il ventricolo destro manda il sangue ai polmoni con l'arteria polmonare."],
+["B",3,"La regolazione della temperatura corporea è un esempio di…",["Feedback negativo","Feedback positivo","Mitosi","Fotosintesi"],"Il corpo reagisce al cambiamento riportando il valore verso la norma."],
+["A",1,"Completa il jingle di Dario Moccia: «È l'ora dello…»",["Sbusto","Spacchetto","Pacchetto","Scrocco"],"È il jingle che annuncia l'apertura di un pacchetto di carte: è diventato virale.","Dario Moccia è l'ora dello sbusto"],
+["A",1,"Completa il saluto di Ciccio Gamer: «Hakuna Matata…»",["Ragazzi!","Amici!","Raga!","Bro!"],"«Hakuna Matata, ragazzi!» è il suo saluto storico.","CiccioGamer89 Hakuna Matata ragazzi"],
+["A",1,"Completa il titolo della serie di Marco Merrino: «Marco parla male di…»",["Cose","Tutti","YouTube","Film"],"«Marco parla male di cose» è la sua serie storica.","Marco parla male di cose"],
+["A",1,"Cosa urla Speed per imitare l'esultanza di Ronaldo?",["SIUUU!","GOOOL!","VAMOS!","LET'S GO!"],"Speed è il superfan più famoso di Cristiano Ronaldo.","IShowSpeed siuuu"],
+["A",1,"Cosa fa Speed quando è gasato, tanto da essere diventato un meme?",["Abbaia","Fa la ruota","Balla il tip tap","Fischia"],"Abbaia ai fan… e anche agli animali!","IShowSpeed barking"],
+["A",1,"Chi ha vinto Kingdom of Chaos, il game show organizzato da Blur?",["Marza","Moonryde","Zano","Blur stesso"],"Marza, ripescato dal pubblico, ha battuto Moonryde nel tunnel dei laser.","Red Bull Kingdom of Chaos Marza"],
+["A",1,"Chi è l'idolo di IShowSpeed?",["Cristiano Ronaldo","Messi","Neymar","Mbappé"],"Lo ha incontrato dal vivo nel 2023.","IShowSpeed incontra Ronaldo"],
+["A",2,"Che animale c'è nel logo di Ciccio Gamer?",["Un paguro","Un leone","Un cane","Un pinguino"],"Il paguro è sia il logo sia la mascotte del canale."],
+["A",2,"Come si chiamano due burger «romani» inventati da Ciccio Gamer?",["Carbonaro89 e AmatriCiccio","CiccioBurger e Hakuna Burger","Matata e Simba","Romano89 e Cacio89"],"Uniscono la cucina romana all'hamburger.","Ciccio Gamer AmatriCiccio"],
+["A",2,"Come si chiamano le gare su GTA 5 di Blur?",["Sdrogo Corse","Blur Racing","Fast & Blur","GTA Party"],"Uno dei suoi format più famosi su Twitch.","Blur Sdrogo Corse GTA"],
+["A",2,"Chi è l'idolo di Blur fin da bambino?",["Totti","Del Piero","Ronaldo","Buffon"],"Con Totti ha anche rappresentato l'Italia nella Kings League."],
+["A",2,"Quale parola, con tre punti esclamativi, è la descrizione del canale YouTube di Marza?",["ANDIAMO!!!","VAMOS!!!","FORZA!!!","DAJE!!!"],"Il canale MarzaTV ha come descrizione solo «ANDIAMO!!!»."],
+["A",2,"Il meme «Mio Padre» parla del «Volpe». Chi è?",["Volpescu","Moonryde","Blur","Zano"],"Giovanni «Volpescu» Ballerini, streamer amico di Dario Moccia.","Linguaggio di Venz mio padre"],
+["A",2,"A quali animali ha abbaiato Speed durante un safari in Botswana?",["Cervi","Leoni","Elefanti","Giraffe"],"È successo durante il tour «Speed Does Africa».","IShowSpeed Botswana safari"],
+["A",2,"Come si chiama il gruppo di amici creator di Kai Cenat?",["AMP","FaZe","Sidemen","OTK"],"Nell'AMP ci sono anche Duke Dennis, Fanum, Agent 00 e ImDavisss."],
+["A",2,"Quale ritornello famosissimo usa «Dogs», la canzone di Kai Cenat e Speed?",["Who Let the Dogs Out","Old Town Road","Baby Shark","Gangnam Style"],"Riprende il ritornello dei Baha Men.","Kai Cenat IShowSpeed Dogs"],
+["A",2,"Come si chiamano le maratone di live lunghe un mese di Kai Cenat?",["Mafiathon","Kaithon","Streamathon","Subathon King"],"Nella Mafiathon 3 ha battuto il record di abbonati su Twitch."],
+["A",3,"Qual è il vero nome di Blur?",["Gianmarco Tocco","Francesco Marzano","Mirko Alessandrini","Dario Ferracci"],"Francesco Marzano è Marza, Mirko Alessandrini è Ciccio Gamer, Dario Ferracci è Moonryde."],
+["A",3,"In quale castello si è svolto Kingdom of Chaos?",["Castello Orsini-Odescalchi di Bracciano","Castel Sant'Angelo","Castello Sforzesco","Castello di Miramare"],"25 creator divisi in 5 squadre, a Bracciano."],
+["A",3,"Qual è il vero nome di Ciccio Gamer?",["Mirko Alessandrini","Marco Alessandri","Mirko Alessandrelli","Francesco Merrino"],"Mirko Alessandrini, romano, classe 1989."],
+["A",3,"Come si chiama il fratello di Marco Merrino che compare nei suoi video?",["Ciccio Merrino","Luca Merrino","Peppe Merrino","Dario Merrino"],"Francesco «Ciccio» Merrino."],
+["A",3,"In che anno Dario Moccia è sbarcato su Twitch?",["2018","2015","2020","2022"],"Il 22 maggio 2018."],
+["A",3,"Di quale città è IShowSpeed?",["Cincinnati","New York","Los Angeles","Atlanta"],"Darren Watkins Jr. è di Cincinnati, in Ohio."],
+["A",3,"Nella Mafiathon 3 Kai Cenat è stato il primo streamer a superare…",["1 milione di abbonati attivi","1 milione di follower","100 ore di diretta","10 milioni di spettatori"],"Un record mai visto su Twitch, a settembre 2025."],
+["A",3,"Quale campione NBA ha tagliato i capelli a Kai Cenat durante la Mafiathon 3?",["LeBron James","Stephen Curry","Kevin Durant","Shaquille O'Neal"],"Uno dei momenti più virali della maratona.","Kai Cenat LeBron haircut"],
+["A",3,"Di quale città è Marza?",["Bari","Roma","Napoli","Milano"],"Francesco Marzano è barese."],
+["A",3,"Come si intitola la canzone che Speed ha dedicato a Ronaldo nel 2022?",["Ronaldo (Sewey)","Siuuu Song","CR7","Champions"],"«Champions» invece è quella che ha cantato alla finale dei Mondiali 2026.","IShowSpeed Ronaldo Sewey"]
+];
+
+const CI=["atom","orbital","table","light","table","flask","table","flask","table","flask","table","flask","table","flask","table","orbital","flask","flask","light","flask","orbital"];
+const BI=["heart","drop","vessel","drop","body","body","vessel","cells","drop","heart","drop","drop","vessel","cells","cells","heart","heart","heart","body"];
+{let c=0,b=0;Q.forEach(r=>{if(r[0]==="C")r[6]=CI[c++];else if(r[0]==="B")r[6]=BI[b++]})}
+const W='fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"';
+const ILL={
+atom:`<g ${W}><ellipse cx="100" cy="80" rx="78" ry="26"/><ellipse cx="100" cy="80" rx="78" ry="26" transform="rotate(60 100 80)"/><ellipse cx="100" cy="80" rx="78" ry="26" transform="rotate(-60 100 80)"/></g><g fill="#fff"><circle cx="93" cy="76" r="9"/><circle cx="107" cy="76" r="9" opacity=".7"/><circle cx="100" cy="88" r="9" opacity=".85"/><circle cx="178" cy="80" r="7"/><circle cx="61" cy="12" r="7"/><circle cx="61" cy="148" r="7"/></g>`,
+orbital:`<g ${W} opacity=".45"><path d="M100 10v140M20 80h160"/></g><g fill="#fff" opacity=".85"><path d="M100 80C70 50 50 20 100 14 150 20 130 50 100 80Z"/><path d="M100 80C70 110 50 140 100 146 150 140 130 110 100 80Z" opacity=".6"/></g>`,
+table:`<g fill="#fff">${[[0,0],[17,0],[0,1],[1,1],[12,1],[13,1],[14,1],[15,1],[16,1],[17,1],[0,2],[1,2],[12,2],[13,2],[14,2],[15,2],[16,2],[17,2]].concat(Array.from({length:36},(_,i)=>[i%18,3+(i/18|0)])).map(([x,y],i)=>`<rect x="${10+x*10.2}" y="${20+y*22}" width="8.6" height="19" rx="2" opacity="${.45+((i*37)%50)/100}"/>`).join("")}</g>`,
+light:`<g ${W}><path d="M8 80c12-30 24-30 36 0s24 30 36 0 24-30 36 0"/><path d="M120 40l52 80h-104z" transform="translate(10 0)"/></g><g stroke-width="5" stroke-linecap="round"><path d="M165 78l30-22" stroke="#ffd34d"/><path d="M168 84l30-6" stroke="#7ee08a"/><path d="M166 90l30 12" stroke="#8fc1ff"/></g>`,
+flask:`<g ${W}><path d="M80 14h40M88 14v44L50 140h100L112 58V14"/></g><path d="M64 112h72l12 26H52z" fill="#fff" opacity=".8"/><g fill="#fff"><circle cx="96" cy="96" r="5"/><circle cx="110" cy="80" r="4"/><circle cx="102" cy="64" r="3"/></g>`,
+heart:`<g ${W}><path d="M100 146C40 110 26 78 40 52c14-24 44-24 60 0 16-24 46-24 60 0 14 26 0 58-60 94Z"/><path d="M84 40V12M100 44V8M118 40l14-26"/></g><path d="M100 146C40 110 26 78 40 52c14-24 44-24 60 0z" fill="#fff" opacity=".25"/>`,
+drop:`<path d="M100 12C76 52 52 80 52 106a48 48 0 0 0 96 0c0-26-24-54-48-94Z" fill="#fff" opacity=".9"/><path d="M78 108a22 22 0 0 0 22 22" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="6" stroke-linecap="round"/>`,
+vessel:`<g ${W}><path d="M100 150V96M100 96L60 60M100 96l40-36M60 60L40 22M60 60l12-40M140 60l-12-40M140 60l26-34"/><path d="M40 22l-12-8M40 22l2-14M166 26l12-6M166 26l-2-14" stroke-width="3"/></g>`,
+cells:`<g ${W}><circle cx="70" cy="62" r="34"/><circle cx="134" cy="56" r="28"/><circle cx="112" cy="116" r="32"/></g><g fill="#fff"><circle cx="74" cy="66" r="11"/><circle cx="130" cy="52" r="9"/><circle cx="116" cy="112" r="10"/></g>`,
+body:`<g fill="#fff" opacity=".9"><circle cx="100" cy="24" r="15"/><path d="M76 46h48l14 52-12 3-12-36v85h-14v-50h-0v50H86V65l-12 36-12-3z"/></g>`
+};
+{const n={C:0,B:0,A:0};Q.forEach(r=>{n[r[0]]++;r[7]=r[0]+String(n[r[0]]).padStart(2,"0")})}
+const illus=k=>ILL[k]?`<svg viewBox="0 0 200 160" role="img" aria-label="Illustrazione">${ILL[k]}</svg>`:"";
+
+const CAT={C:"Chimica",B:"Biologia",A:"Attualità"};
+const SHAPE=["▲","◆","●","■"],MULT=[0,1,1.5,2],STARS=["","★","★★","★★★"];
+const TEAMS=[["Rossi","var(--a0)"],["Blu","var(--a1)"],["Gialli","var(--a2)"],["Viola","var(--a3)"]];
+const app=document.getElementById("app");
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const hash=s=>{let h=5381;for(const c of s)h=((h*33)^c.codePointAt(0))>>>0;return "q"+h.toString(36)};
+const ytEmbed=c=>"https://www.youtube-nocookie.com/embed/"+encodeURIComponent(c.yt)+"?autoplay=1&rel=0&playsinline=1&start="+Math.floor(+c.start||0)+(c.end?"&end="+Math.ceil(+c.end):"")+"&_="+Date.now();
+const yt=q=>"https://www.youtube.com/results?search_query="+encodeURIComponent(q);
+const $=id=>document.getElementById(id);
+
+/* ---------- suoni (sintetizzati, niente file) ---------- */
+let AC=null,soundOn=true;
+try{soundOn=localStorage.getItem("quiz-snd")!=="0"}catch(e){}
+const au=()=>{if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==="suspended")AC.resume().catch(()=>{});return AC};
+function tone(f,d,type,v,when){const a=au();if(!a||!soundOn)return;try{const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+(when||0);o.type=type||"sine";o.frequency.value=f;g.gain.setValueAtTime(v||.15,t);g.gain.exponentialRampToValueAtTime(.001,t+(d||.12));o.connect(g).connect(a.destination);o.start(t);o.stop(t+(d||.12)+.03)}catch(e){}}
+const SFX={tick:()=>tone(900,.05,"square",.05),count:()=>tone(520,.14,"triangle",.18),go:()=>[523,659,784].forEach((f,i)=>tone(f,.16,"triangle",.17,i*.08)),
+ok:()=>[659,880,1175].forEach((f,i)=>tone(f,.2,"sine",.2,i*.09)),bad:()=>{tone(180,.3,"sawtooth",.1);tone(140,.4,"sawtooth",.1,.12)},
+fan:()=>[523,659,784,1047,0,784,1047].forEach((f,i)=>f&&tone(f,.26,"triangle",.17,i*.15)),join:()=>tone(1320,.08,"sine",.1)};
+document.addEventListener("pointerdown",au,{once:true});
+const sndBtn=$("snd");const drawSnd=()=>sndBtn.textContent=soundOn?"🔊":"🔇";drawSnd();
+sndBtn.onclick=()=>{soundOn=!soundOn;try{localStorage.setItem("quiz-snd",soundOn?"1":"0")}catch(e){}drawSnd()};
+$("fs").onclick=()=>{try{const d=document;if(d.fullscreenElement)d.exitFullscreen();else d.documentElement.requestFullscreen().catch(()=>{})}catch(e){}};
+const buzz=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
+
+/* ---------- coriandoli ---------- */
+function confetti(){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  const c=$("conf"),x=c.getContext("2d");c.hidden=false;const W=c.width=innerWidth,H=c.height=innerHeight;
+  const cols=["#e5323e","#1f6ce6","#e59a07","#7b3fd8","#14a05a","#fff"];
+  const ps=Array.from({length:180},()=>({x:Math.random()*W,y:-20-Math.random()*H*.6,vx:(Math.random()-.5)*3,vy:2+Math.random()*4,r:Math.random()*6.3,s:6+Math.random()*8,c:cols[Math.random()*6|0]}));
+  let f=0;(function fr(){x.clearRect(0,0,W,H);for(const p of ps){p.x+=p.vx;p.y+=p.vy;p.r+=.1;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);x.restore()}if(++f<260)requestAnimationFrame(fr);else{x.clearRect(0,0,W,H);c.hidden=true}})();
+}
+
+/* ---------- collegamento: Supabase Realtime ---------- */
+let room=null,ready=false,CLIPS={},cfgErr="";
+function sbRoom(){
+  const C=window.QUIZ_CONFIG||{};
+  if(!window.supabase||!C.supabaseUrl||!C.supabaseKey||/INSERISCI/.test(C.supabaseUrl+C.supabaseKey)){cfgErr=!window.supabase?"Non riesco a caricare Supabase: controlla la connessione.":"Manca la configurazione di Supabase in config.js.";return null}
+  let client;try{client=supabase.createClient(C.supabaseUrl,C.supabaseKey)}catch(e){cfgErr="Configurazione di Supabase non valida.";return null}
+  return{join(name){return new Promise((res,rej)=>{
+    const me=Math.random().toString(36).slice(2,12);
+    const ch=client.channel(name,{config:{broadcast:{self:false},presence:{key:me}}});
+    const hs={},pcbs=[];let list=[],cur={},done=false;
+    ch.on("broadcast",{event:"state"},({payload})=>(hs.state||[]).forEach(f=>f({data:payload,sameTab:false})));
+    ch.on("presence",{event:"sync"},()=>{
+      const st=ch.presenceState(),prev=list;
+      list=Object.entries(st).map(([k,arr])=>({peer:k,sameTab:k===me,presence:(arr&&arr[arr.length-1])||{}}));
+      const joined=list.filter(p=>!prev.some(q=>q.peer===p.peer)),left=prev.filter(p=>!list.some(q=>q.peer===p.peer));
+      pcbs.forEach(f=>f({peers:list,joined,left,updated:[]}));
+    });
+    const rr={
+      emit:(t,d)=>ch.send({type:"broadcast",event:t,payload:d}),
+      on:(t,f)=>{(hs[t]=hs[t]||[]).push(f)},
+      presence:p=>{cur=Object.assign({},cur,p);return ch.track(cur)},
+      peers:()=>list,
+      onPeers:f=>{pcbs.push(f)},
+      leave:()=>client.removeChannel(ch)
+    };
+    const tm=setTimeout(()=>{if(!done){done=true;rej({code:"timeout"})}},12000);
+    ch.subscribe(s=>{if(done)return;if(s==="SUBSCRIBED"){done=true;clearTimeout(tm);res(rr)}else if(s==="CHANNEL_ERROR"||s==="TIMED_OUT"){done=true;clearTimeout(tm);rej({code:s})}});
+  })}};
+}
+room=sbRoom();ready=true;
+fetch("clips.json",{cache:"no-store"}).then(r=>r.ok?r.json():{}).then(j=>{CLIPS=j||{};if(view==="clips")clipsView()}).catch(()=>{});
+let view="home",timerId=null,sendId=null,preId=null;
+const stage=on=>document.body.classList.toggle("stage",!!on);
+
+/* ---------- HOME ---------- */
+function home(){
+  view="home";stage(false);
+  const can=!!room;
+  app.innerHTML=`<h1>Chi conduce usa la LIM, gli altri giocano dal telefono.</h1>
+  <p class="mute">Più rispondi veloce, più punti prendi. Le domande difficili valgono doppio, le serie di risposte giuste danno un bonus e l'ultima domanda vale doppio.</p>
+  <div class="home">
+    <button class="big" style="background:var(--a1)" id="goHost" data-sym="▲"><span>Sulla LIM</span><strong>Conduci la partita</strong></button>
+    <button class="big" style="background:var(--a0)" id="goPlay" data-sym="●" ${can?"":"disabled"}><span>Dal telefono</span><strong>Entra in una partita</strong></button>
+    <button class="big" style="background:var(--a3)" id="goClips" data-sym="▶"><span>Per chi prepara</span><strong>Codici e spezzoni video</strong></button>
+  </div>
+  ${!can?`<p class="warn">Gioco con i telefoni non disponibile: ${esc(cfgErr)} Si può comunque giocare a squadre sulla LIM.</p>`:""}`;
+  $("goHost").onclick=setup;$("goPlay").onclick=()=>joinForm();
+  if($("goClips"))$("goClips").onclick=()=>clipsView();
+}
+
+/* ---------- CODICI E SPEZZONI ---------- */
+let clipFilter="A";
+function clipsView(){
+  view="clips";stage(false);
+  const list=Q.filter(q=>clipFilter==="*"||q[0]===clipFilter);
+  app.innerHTML=`<div class="card clips"><h2>Codici e spezzoni video</h2>
+  <p>Ogni domanda ha un codice. Per aggiungere uno spezzone si scrive il codice nel file <b>clips.json</b> del sito, in uno di questi due modi:</p>
+  <pre style="background:var(--bg);padding:12px;border-radius:10px">{
+  "A05": { "yt": "ID_DEL_VIDEO", "start": 12, "end": 25 },
+  "A06": { "file": "speed.mp4", "start": 0, "end": 10 }
+}</pre>
+  <p class="mute">«yt» è il codice del video YouTube (quello dopo watch?v=). Un «file» va messo nella cartella video del sito. «start» ed «end» sono i secondi.</p>
+  <div class="chips" style="margin:14px 0">${[["A","Attualità"],["C","Chimica"],["B","Biologia"],["*","Tutte"]].map(([k,t])=>`<label><input type="radio" name="cf" value="${k}" ${k===clipFilter?"checked":""}> ${t}</label>`).join("")}</div>
+  <div>${list.map(q=>{const c=CLIPS[q[7]];return `<div class="it"><div><b>${q[7]}</b> · ${esc(q[2])}<br><span class="mute">Risposta: ${esc(q[3][0])}</span></div><div>${c?`<span class="ok-badge">✓ ${c.yt?"YouTube":"file"} ${+c.start||0}–${c.end?+c.end:"fine"} s</span>`:`<span class="mute">nessuno</span>`}</div></div>`}).join("")}</div>
+  <div class="row"><button class="btn" id="back">Indietro</button></div></div>`;
+  app.querySelectorAll("[name=cf]").forEach(r=>r.onchange=()=>{clipFilter=r.value;clipsView()});
+  $("back").onclick=home;
+}
+function clipPlay(v,c,overlay){
+  const st=+c.start||0,en=+c.end||0;
+  const go=()=>{try{v.currentTime=st}catch(e){}v.play().then(()=>{if(overlay)overlay.remove()}).catch(()=>{if(overlay)overlay.hidden=false})};
+  if(v.readyState>=1)go();else v.addEventListener("loadedmetadata",go,{once:true});
+  v.addEventListener("timeupdate",()=>{if(en>st&&v.currentTime>=en)v.pause()});
+  if(overlay)overlay.onclick=()=>{overlay.remove();try{v.currentTime=st}catch(e){}v.play().catch(()=>{})};
+}
+
+/* ---------- CONDUTTORE ---------- */
+let H=null;
+function setup(){
+  view="setup";stage(false);
+  app.innerHTML=`<div class="card"><h2>Prepara la partita</h2>
+  <div class="field"><span>Materie</span><div class="chips">
+    ${Object.entries(CAT).map(([k,n])=>`<label><input type="checkbox" name="cat" value="${k}" checked> ${n}</label>`).join("")}</div></div>
+  <div class="field"><span>Difficoltà</span><div class="chips">
+    ${[["0","Mista"],["1","Facile ★"],["2","Media ★★"],["3","Difficile ★★★"]].map(([v,n],i)=>`<label><input type="radio" name="lv" value="${v}" ${i?"":"checked"}> ${n}</label>`).join("")}</div></div>
+  <div class="field"><span>Quante domande</span><select id="num">${[10,15,20,30,999].map(n=>`<option value="${n}" ${n===15?"selected":""}>${n===999?"Tutte":n}</option>`).join("")}</select></div>
+  <div class="field"><span>Secondi per rispondere</span><select id="sec">${[15,20,30,45].map(n=>`<option ${n===20?"selected":""}>${n}</option>`).join("")}</select></div>
+  <div class="field"><span>Come si gioca</span><div class="chips">
+    <label><input type="radio" name="mode" value="phone" ${room?"checked":"disabled"}> Con i telefoni</label>
+    <label><input type="radio" name="mode" value="lim" ${room?"":"checked"}> A squadre sulla LIM</label></div></div>
+  <div class="field" id="tf"><span>Squadre (a turno)</span><div class="chips">
+    ${[1,2,3,4].map(n=>`<label><input type="radio" name="tm" value="${n}" ${n===2?"checked":""}> ${n===1?"Tutta la classe":n}</label>`).join("")}</div></div>
+  <p class="mute" id="avail"></p>
+  <div class="row"><button class="btn go" id="go">Crea la partita</button><button class="btn alt" id="back">Indietro</button></div></div>`;
+  const read=()=>{const cats=[...app.querySelectorAll("[name=cat]:checked")].map(e=>e.value);const lv=+app.querySelector("[name=lv]:checked").value;return Q.filter(q=>cats.includes(q[0])&&(!lv||q[1]===lv))};
+  const upd=()=>{const n=read().length,lim=app.querySelector("[name=mode]:checked").value==="lim";$("tf").hidden=!lim;
+    const cl=read().filter(q=>CLIPS[q[7]]).length;
+    $("avail").textContent=`Domande disponibili: ${n}`+(cl?` · con spezzone video: ${cl}`:"");$("go").disabled=!n};
+  app.querySelectorAll("input").forEach(e=>e.onchange=upd);upd();
+  $("back").onclick=home;
+  $("go").onclick=async()=>{
+    au();
+    const pool=read(),num=+$("num").value;
+    const list=shuf(pool).slice(0,num).map((q,k)=>{const o=shuf(q[3].map((t,i)=>({t,i})));return{id:k+1,key:q[7],cat:q[0],lv:q[1],text:q[2],opts:o.map(x=>x.t),ans:o.findIndex(x=>x.i===0),expl:q[4],vq:q[5],img:q[6]}});
+    const mode=app.querySelector("[name=mode]:checked").value;
+    H={mode,list,i:-1,ph:"lobby",sec:+$("sec").value,P:{},counts:[0,0,0,0],endsAt:0,epoch:Date.now(),pick:null,rr:null,code:null,warn:"",fast:null,prevRank:{}};
+    if(mode==="lim"){const n=+app.querySelector("[name=tm]:checked").value;H.teams=n;
+      (n===1?[["Classe","var(--a1)"]]:TEAMS.slice(0,n)).forEach(([t])=>H.P[t]={s:0,g:0,st:0});return nextQ()}
+    H.code=String(1000+Math.random()*9000|0);
+    try{H.rr=await room.join("quiz-"+H.code)}catch(e){H.mode="lim";H.teams=1;H.P={Classe:{s:0,g:0,st:0}};H.warn="Non riesco ad aprire la stanza per i telefoni: si gioca sulla LIM.";return nextQ()}
+    let known=0;
+    H.rr.onPeers(ch=>{if(ch.joined.length)send();const n=players().length;if(n>known&&H.ph==="lobby")SFX.join();known=n;if(view==="host"&&H.ph==="lobby")hostRender()});
+    sendId=setInterval(send,1500);
+    hostRender();
+  };
+}
+const players=()=>H&&H.rr?H.rr.peers().filter(p=>!p.sameTab&&p.presence&&typeof p.presence.nick==="string"&&p.presence.nick.trim()):[];
+const nickOf=p=>p.presence.nick.trim().slice(0,20);
+const isLast=()=>H.i===H.list.length-1;
+const teamName=i=>H.teams===1?"Classe":TEAMS[i%H.teams][0];
+const teamCol=i=>H.teams===1?"var(--a1)":TEAMS[i%H.teams][1];
+function pub(){
+  const q=H.list[H.i],show=H.ph==="q"||H.ph==="rev";
+  const sc={};for(const[k,v]of Object.entries(H.P))sc[k]=[v.s,v.g,v.st];
+  return{e:H.epoch,ph:H.ph,n:H.i+1,tot:H.list.length,sec:H.sec,last:isLast(),
+    cat:q&&q.cat,lv:q&&q.lv,
+    q:q&&show?{id:q.id,text:q.text,opts:q.opts}:null,
+    left:H.ph==="q"?Math.max(0,H.endsAt-Date.now()):0,
+    ans:H.ph==="rev"?q.ans:null,expl:H.ph==="rev"?q.expl:null,sc,fast:H.ph==="rev"?H.fast:null};
+}
+function send(){if(H&&H.rr)H.rr.emit("state",pub()).catch(e=>{if(e&&e.code==="not_permitted"&&!H.warn){H.warn="Solo chi può modificare questa pagina può condurre con i telefoni.";hostRender()}})}
+function nextQ(){
+  H.i++;
+  if(H.i>=H.list.length){H.ph="end";send();hostRender();SFX.fan();confetti();return}
+  H.ph="pre";H.counts=[0,0,0,0];H.pick=null;H.fast=null;
+  send();hostRender();
+  let c=3;SFX.count();
+  clearInterval(preId);preId=setInterval(()=>{c--;const el=$("cnum");if(c>0){if(el){el.textContent=c;el.style.animation="none";void el.offsetWidth;el.style.animation=""}SFX.count()}else{clearInterval(preId);startQ()}},1000);
+}
+function startQ(){
+  H.ph="q";H.endsAt=Date.now()+H.sec*1000;H.lastSec=null;
+  send();hostRender();SFX.go();
+  clearInterval(timerId);timerId=setInterval(tick,200);
+}
+function tick(){
+  if(H.ph!=="q")return clearInterval(timerId);
+  const left=Math.max(0,H.endsAt-Date.now()),s=Math.ceil(left/1000);
+  const fg=$("fg"),tt=$("tt"),ring=$("ring");
+  if(fg)fg.style.strokeDashoffset=String(226*(1-left/(H.sec*1000)));
+  if(tt)tt.textContent=s;if(ring)ring.classList.toggle("hot",s<=5);
+  if(s<=5&&s>0&&s!==H.lastSec)SFX.tick();H.lastSec=s;
+  if(H.mode==="phone"){const ps=players(),q=H.list[H.i];const done=ps.filter(p=>p.presence.a&&p.presence.a.q===q.id).length;const ac=$("ac");if(ac)ac.textContent=`${done}/${ps.length} hanno risposto`;if(ps.length&&done===ps.length)return reveal()}
+  if(left<=0)reveal();
+}
+function points(ms,lv,st){const f=Math.max(0,1-ms/(H.sec*1000));let p=(500+500*f)*MULT[lv]*(1+.1*Math.min(Math.max(st-1,0),5));if(isLast())p*=2;return Math.round(p)}
+const ranking=()=>Object.entries(H.P).sort((a,b)=>b[1].s-a[1].s);
+function reveal(){
+  if(H.ph!=="q")return;clearInterval(timerId);
+  const q=H.list[H.i];
+  H.prevRank={};ranking().forEach(([k],i)=>H.prevRank[k]=i);
+  for(const v of Object.values(H.P))v.g=0;
+  if(H.mode==="phone"){
+    for(const p of players()){
+      const nick=nickOf(p),a=p.presence.a;const r=H.P[nick]||(H.P[nick]={s:0,g:0,st:0});
+      if(a&&a.q===q.id&&a.c>=0&&a.c<4){H.counts[a.c]++;
+        if(a.c===q.ans){r.st++;r.g=points(+a.t||0,q.lv,r.st);r.s+=r.g;if(!H.fast||a.t<H.fast[1])H.fast=[nick,Math.round(+a.t||0)]}else r.st=0}
+      else r.st=0;
+    }
+  }else{
+    const t=H.P[teamName(H.i)];
+    if(H.pick!=null){H.counts[H.pick]=1;if(H.pick===q.ans){t.st++;t.g=points(H.sec*1000-(H.endsAt-H.pickAt),q.lv,t.st);t.s+=t.g}else t.st=0}else t.st=0;
+  }
+  H.ph="rev";send();hostRender();
+  const anyOk=H.mode==="phone"?H.counts[q.ans]>0:H.pick===q.ans;anyOk?SFX.ok():SFX.bad();
+}
+function toBoard(){H.ph="board";send();hostRender()}
+function tilesHTML(q,state){
+  return `<div class="grid">${q.opts.map((t,i)=>{
+    const cls=state==="rev"?(i===q.ans?"ok":"off"):"";
+    const tag=state==="lim"?"button":"div";
+    const n=state==="rev"&&H.mode==="phone"?`<span class="n">${H.counts[i]}</span>`:"";
+    const k=state==="lim"?`<kbd>${i+1}</kbd>`:"";
+    return `<${tag} class="tile t${i} ${cls}" data-i="${i}"><span class="s">${SHAPE[i]}</span>${esc(t)}${k}${n}</${tag}>`}).join("")}</div>`;
+}
+function boardHTML(n){
+  const r=ranking().slice(0,n);
+  return `<div class="lb">${r.map(([k,v],i)=>{const pr=H.prevRank[k],d=pr==null?0:pr-i;
+    return `<div class="r" style="animation-delay:${i*.06}s"><span class="pos">${i+1}</span><span class="nm">${esc(k)}${v.st>=2?` <span class="streak">🔥${v.st}</span>`:""}</span><span class="dl ${d>0?"up":d<0?"dn":""}">${v.g?`+${v.g}`:""} ${d>0?"▲"+d:d<0?"▼"+(-d):""}</span><span class="pt">${v.s}</span></div>`}).join("")||`<p class="mute">Nessun giocatore.</p>`}</div>`;
+}
+function hostRender(){
+  view="host";stage(H.ph!=="lobby");
+  const warn=H.warn?`<p class="warn">${esc(H.warn)}</p>`:"";
+  if(H.ph==="lobby"){
+    const ps=players();
+    app.innerHTML=`${warn}<h1>Prendete il telefono!</h1><p class="mute">Aprite questo stesso link, toccate <b>Entra in una partita</b> e scrivete il codice:</p>
+    <div class="code">${[...H.code].map(d=>`<span>${d}</span>`).join("")}</div>
+    <div class="players">${ps.length?ps.map(p=>`<span>${esc(nickOf(p))}</span>`).join(""):`<span class="mute" style="border-style:dashed;animation:none">Nessuno ancora…</span>`}</div>
+    <div class="row"><button class="btn go" id="main">Inizia · ${ps.length} giocatori<kbd>Invio</kbd></button><button class="btn alt" id="quit">Annulla</button></div>`;
+    $("main").onclick=nextQ;$("quit").onclick=stopHost;return;
+  }
+  if(H.ph==="end"){
+    const r=ranking(),col=["var(--a2)","var(--a1)","var(--a0)"],h=[230,170,130],order=[1,0,2];
+    app.innerHTML=`<h1 style="text-align:center">Classifica finale</h1><div class="podium">${order.map(k=>r[k]?`<div style="background:${col[k]};height:${h[k]}px"><b>${k+1}°</b><span class="nm">${esc(r[k][0])}</span><span>${r[k][1].s} pt</span></div>`:"<div></div>").join("")}</div>${boardHTML(40)}
+    <div class="row"><button class="btn go" id="again">Nuova partita</button><button class="btn alt" id="home">Menu</button></div>`;
+    $("again").onclick=()=>{stopHost(true);setup()};$("home").onclick=()=>stopHost();return;
+  }
+  const q=H.list[H.i];
+  const turn=H.mode==="lim"&&H.teams>1&&H.ph!=="board"?`<span class="tag" style="background:${teamCol(H.i)}">Tocca ai ${teamName(H.i)}</span>`:"";
+  const head=`<div class="top"><span class="tag" style="background:var(--${q.cat})">${CAT[q.cat]} ${STARS[q.lv]}</span><span class="mute">Domanda ${H.i+1} di ${H.list.length}</span>${turn}${isLast()?`<span class="final">Ultima domanda · punti doppi</span>`:""}`;
+  if(H.ph==="pre"){
+    app.innerHTML=`${head}</div><div class="count"><div><p class="mute" style="font-size:22px">Pronti?</p><div class="num" id="cnum">3</div></div></div>`;return;
+  }
+  if(H.ph==="q"){
+    app.innerHTML=`${warn}${head}${H.mode==="phone"?`<span class="mute" id="ac"></span>`:""}<div class="ring" id="ring"><svg viewBox="0 0 80 80"><circle class="bgc" cx="40" cy="40" r="36"/><circle class="fg" id="fg" cx="40" cy="40" r="36" stroke-dasharray="226" stroke-dashoffset="0"/></svg><b id="tt">${H.sec}</b></div></div>
+    ${q.img?`<div class="qh"><h1>${esc(q.text)}</h1><div class="pic" style="background:var(--${q.cat})">${illus(q.img)}</div></div>`:`<h1>${esc(q.text)}</h1>`}${tilesHTML(q,H.mode==="lim"?"lim":"q")}
+    <div class="row"><button class="btn alt" id="main">Mostra la risposta<kbd>Invio</kbd></button>${H.mode==="lim"?`<span class="mute">Toccate la casella scelta${H.teams>1?" dalla squadra":" dalla classe"}, o premete 1–4.</span>`:""}</div>`;
+    $("main").onclick=reveal;
+    app.querySelectorAll("button.tile").forEach(b=>b.onclick=()=>{H.pick=+b.dataset.i;H.pickAt=Date.now();reveal()});
+    tick();return;
+  }
+  if(H.ph==="board"){
+    app.innerHTML=`${head}</div><h1>Classifica</h1>${boardHTML(H.mode==="phone"?8:4)}
+    <div class="row"><button class="btn go" id="main">${H.i+1<H.list.length?"Prossima domanda":"Classifica finale"}<kbd>Invio</kbd></button></div>`;
+    $("main").onclick=nextQ;return;
+  }
+  // risposta
+  const clip=(CLIPS[q.key]&&(CLIPS[q.key].yt||CLIPS[q.key].file))?CLIPS[q.key]:null,tot=H.counts.reduce((a,b)=>a+b,0)||1;
+  let verdict="";
+  if(H.mode==="lim"){const t=H.P[teamName(H.i)];verdict=H.pick==null?`<p class="fast">Tempo scaduto!</p>`:H.pick===q.ans?`<p class="fast" style="border-color:var(--ok)">Giusto! ${H.teams>1?esc(teamName(H.i))+" ":""}+${t.g} punti</p>`:`<p class="fast">Sbagliato…</p>`}
+  else if(H.fast)verdict=`<p class="fast">⚡ Il più veloce: ${esc(H.fast[0])} in ${(H.fast[1]/1000).toFixed(1)} s</p>`;
+  const dist=H.mode==="phone"?`<div class="dist">${q.opts.map((t,i)=>`<div><span>${SHAPE[i]}</span><i class="t${i}" style="width:0" data-w="${Math.max(2,H.counts[i]/tot*100)}%"></i><span>${H.counts[i]}</span></div>`).join("")}</div>`:"";
+  app.innerHTML=`${head}</div><h1>${esc(q.text)}</h1>${tilesHTML(q,"rev")}
+  <div class="rev ${clip?"v":""}">
+    ${clip&&clip.yt?`<div class="vid"><iframe id="yt" src="${ytEmbed(clip)}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen title="Spezzone video" style="width:100%;height:100%;border:0"></iframe></div>`:""}
+    ${clip&&clip.file?`<div class="vid"><video id="vid" playsinline preload="auto" src="video/${encodeURIComponent(clip.file)}"></video><button class="play" id="vplay" hidden>▶ Guarda lo spezzone</button></div>`:""}
+    <div style="display:grid;gap:14px;align-content:start"><p class="expl">${esc(q.expl)}</p>${verdict}${dist}
+    ${!clip&&q.vq?`<p><a href="${yt(q.vq)}" target="_blank" rel="noopener">▶ Cerca il video su YouTube</a></p>`:""}</div>
+  </div>
+  <div class="row"><button class="btn go" id="main">Classifica<kbd>Invio</kbd></button>${clip?`<button class="btn alt" id="again">↻ Rivedi</button>`:""}</div>`;
+  $("main").onclick=()=>{const v=$("vid");if(v)v.pause();toBoard()};
+  requestAnimationFrame(()=>app.querySelectorAll(".dist i").forEach(i=>i.style.width=i.dataset.w));
+  if(clip&&clip.file){const v=$("vid");clipPlay(v,clip,$("vplay"));$("again").onclick=()=>clipPlay(v,clip,$("vplay"))}
+  else if(clip&&clip.yt){$("again").onclick=()=>{$("yt").src=ytEmbed(clip)}}
+}
+function stopHost(keep){clearInterval(timerId);clearInterval(sendId);clearInterval(preId);if(H&&H.rr)H.rr.leave().catch(()=>{});H=null;if(!keep)home()}
+document.addEventListener("keydown",e=>{
+  if(view!=="host"||!H||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
+  if(e.key==="Enter"||e.key===" "){const b=$("main");if(b){e.preventDefault();b.click()}}
+  else if(/^[1-4]$/.test(e.key)&&H.ph==="q"&&H.mode==="lim"){const b=app.querySelector(`button.tile[data-i="${+e.key-1}"]`);if(b)b.click()}
+});
+
+/* ---------- GIOCATORE ---------- */
+let P=null;
+function joinForm(msg){
+  view="join";stage(false);
+  let nick="";try{nick=localStorage.getItem("quiz-nick")||""}catch(e){}
+  app.innerHTML=`<div class="card" style="max-width:520px;margin:0 auto"><h2>Entra in una partita</h2>
+  ${msg?`<p class="warn">${esc(msg)}</p>`:""}
+  <form id="jf"><div class="field"><span>Codice (lo vedi sulla LIM)</span><input type="text" id="jc" inputmode="numeric" maxlength="4" autocomplete="off" style="font-size:28px;letter-spacing:.2em;font-weight:800"></div>
+  <div class="field"><span>Il tuo nome</span><input type="text" id="jn" maxlength="20" value="${esc(nick)}" autocomplete="off"></div>
+  <div class="row"><button class="btn go">Entra</button><button class="btn alt" type="button" id="back">Indietro</button></div></form></div>`;
+  $("back").onclick=home;
+  $("jf").onsubmit=async e=>{
+    e.preventDefault();au();
+    const code=$("jc").value.replace(/\D/g,""),nk=$("jn").value.trim().slice(0,20);
+    if(code.length!==4||!nk)return joinForm("Scrivi il codice di 4 cifre e il tuo nome.");
+    try{localStorage.setItem("quiz-nick",nk)}catch(e){}
+    let rr;try{rr=await room.join("quiz-"+code)}catch(err){return joinForm("Non riesco a entrare. Controlla il codice e riprova.")}
+    P={rr,code,nick:nk,S:null,seen:0,my:{},last:"",fx:""};
+    rr.presence({nick:nk,a:null}).catch(()=>{});
+    rr.on("state",m=>{if(m.sameTab||!m.data)return;P.S=m.data;playerRender()});
+    playerRender();
+  };
+}
+function myScore(){const v=P.S&&P.S.sc&&P.S.sc[P.nick];return v?{s:v[0],g:v[1],st:v[2]}:{s:0,g:0,st:0}}
+function pos(){const r=Object.entries(P.S.sc||{}).sort((a,b)=>b[1][0]-a[1][0]);const k=r.findIndex(x=>x[0]===P.nick);return k<0?r.length+1:k+1}
+function playerRender(){
+  view="player";const S=P.S;
+  const wait=t=>`<div class="big-msg"><div class="e">✓</div><h2>Sei dentro, ${esc(P.nick)}!</h2><p class="mute">${t}</p></div>`;
+  if(!S){app.innerHTML=wait("Aspetta che parta la partita sulla LIM.");return}
+  const me=myScore(),ans=S.q&&P.my[S.q.id]!=null;
+  const key=[S.e,S.ph,S.n,ans,me.s].join(":");
+  if(key===P.last)return;P.last=key;
+  const head=`<div class="top"><span class="tag" style="background:var(--${S.cat||"A"})">${CAT[S.cat]||""} ${STARS[S.lv]||""}</span><span class="mute">${S.n}/${S.tot}</span>${S.last?`<span class="final">Punti doppi</span>`:""}<span style="margin-left:auto;font-weight:800">${me.s} pt</span></div>`;
+  if(S.ph==="lobby"){app.innerHTML=wait("Aspetta che parta la partita sulla LIM.");return}
+  if(S.ph==="pre"){app.innerHTML=`${head}<div class="big-msg"><div class="e">👀</div><h2>Guarda la LIM!</h2><p class="mute">La domanda sta per arrivare…</p></div>`;buzz(40);return}
+  if(S.ph==="q"&&S.q){
+    if(P.fx!=="q"+S.n){P.fx="q"+S.n;P.seen=Date.now()-((S.sec*1000)-S.left)}
+    if(ans){const c=P.my[S.q.id];app.innerHTML=`${head}<div class="big-msg"><div class="e" style="color:var(--a${c})">${SHAPE[c]}</div><h2>Risposta inviata</h2><p class="mute">Aspetta che finisca il tempo…</p></div>`;return}
+    app.innerHTML=`${head}<p style="font-weight:700;font-size:18px">${esc(S.q.text)}</p><div class="grid ph">${S.q.opts.map((t,i)=>`<button class="tile t${i}" data-i="${i}"><span class="s">${SHAPE[i]}</span>${esc(t)}</button>`).join("")}</div>`;
+    app.querySelectorAll("button.tile").forEach(b=>b.onclick=()=>{
+      const c=+b.dataset.i;P.my[S.q.id]=c;buzz(25);
+      P.rr.presence({nick:P.nick,a:{q:S.q.id,c,t:Math.max(0,Date.now()-P.seen)}}).catch(()=>{});
+      playerRender()});
+    return;
+  }
+  if(S.ph==="rev"&&S.q){
+    const mine=P.my[S.q.id],ok=mine===S.ans;
+    if(P.fx!=="r"+S.n){P.fx="r"+S.n;if(mine!=null){ok?(SFX.ok(),buzz([30,40,30])):(SFX.bad(),buzz(200))}}
+    app.innerHTML=`${head}<div class="big-msg" style="padding-bottom:6px"><div class="e" style="color:${mine==null?"var(--mute)":ok?"var(--ok)":"var(--a0)"}">${mine==null?"⏱":ok?"✓":"✗"}</div>
+    <h2>${mine==null?"Tempo scaduto":ok?"Giusto!":"Sbagliato"}</h2>${ok&&me.g?`<div class="gain">+${me.g}</div>`:""}${me.st>=2?`<div class="streak">🔥 ${me.st} di fila</div>`:""}
+    <p style="margin-top:14px">Risposta giusta: <b>${esc(S.q.opts[S.ans])}</b></p><p class="mute">${esc(S.expl||"")}</p></div>`;return;
+  }
+  if(S.ph==="board"){app.innerHTML=`${head}<div class="big-msg"><div class="e">${pos()}°</div><h2>${me.s} punti</h2><p class="mute">${pos()===1?"Sei in testa! 👑":"Guarda la classifica sulla LIM."}</p></div>`;return}
+  if(S.ph==="end"){const p=pos();if(P.fx!=="end"){P.fx="end";if(p<=3){SFX.fan();confetti()}}
+    app.innerHTML=`<div class="big-msg"><div class="e">${p<=3?["🥇","🥈","🥉"][p-1]:p+"°"}</div><h2>Partita finita!</h2><p style="font-size:24px"><b>${me.s} punti</b></p><p class="mute">Guarda il podio sulla LIM.</p></div>`;return}
+  app.innerHTML=wait("Aspetta la prossima domanda.");
+}
+
+home();
+}
+</script>
+</body>
+</html>
