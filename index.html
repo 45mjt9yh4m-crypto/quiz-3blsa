@@ -111,6 +111,10 @@ button.tile{cursor:pointer}button.tile:active{transform:scale(.97)}
 .pic::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.25),transparent 60%)}
 .pic svg{width:100%;height:100%;position:relative}
 @media(max-width:600px){.qh{grid-template-columns:minmax(0,1fr) 110px;gap:12px}}
+.tile{overflow-wrap:anywhere;hyphens:auto}.tile.sm{font-size:clamp(15px,1.8vw,22px)}.tile.xs{font-size:clamp(14px,1.5vw,19px)}
+h1.long{font-size:clamp(22px,3.3vw,40px)}
+@media(max-height:820px) and (min-width:601px){h1{font-size:clamp(24px,3.6vw,42px)}h1.long{font-size:clamp(20px,2.8vw,34px)}.tile{min-height:84px;padding-top:12px;padding-bottom:12px}}
+.ph .tile.sm{font-size:16px}.ph .tile.xs{font-size:15px}
 canvas#conf{position:fixed;inset:0;pointer-events:none;width:100%;height:100%;z-index:9}
 a{color:inherit}
 @media(max-width:760px){.rev.v{grid-template-columns:minmax(0,1fr)}}
@@ -219,6 +223,7 @@ const CAT={C:"Chimica",B:"Biologia",A:"Attualità"};
 const SHAPE=["▲","◆","●","■"],MULT=[0,1,1.5,2],STARS=["","★","★★","★★★"];
 const TEAMS=[["Rossi","var(--a0)"],["Blu","var(--a1)"],["Gialli","var(--a2)"],["Viola","var(--a3)"]];
 const app=document.getElementById("app");
+const fit=s=>s.length>45?"xs":s.length>26?"sm":"";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 const hash=s=>{let h=5381;for(const c of s)h=((h*33)^c.codePointAt(0))>>>0;return "q"+h.toString(36)};
@@ -288,7 +293,7 @@ function home(){
   view="home";stage(false);
   const can=!!room;
   app.innerHTML=`<h1>Chi conduce usa la LIM, gli altri giocano dal telefono.</h1>
-  <p class="mute">Più rispondi veloce, più punti prendi. Le domande difficili valgono doppio, le serie di risposte giuste danno un bonus e l'ultima domanda vale doppio.</p>
+  <p class="mute">Più rispondi veloce, più punti prendi. Le domande difficili valgono doppio, le serie di risposte giuste danno un bonus e l'ultima domanda vale doppio. Le domande di attualità sono <b>domande bonus</b>: si gioca per divertimento, ma non valgono punti.</p>
   <div class="home">
     <button class="big" style="background:var(--a1)" id="goHost" data-sym="▲"><span>Sulla LIM</span><strong>Conduci la partita</strong></button>
     <button class="big" style="background:var(--a0)" id="goPlay" data-sym="●" ${can?"":"disabled"}><span>Dal telefono</span><strong>Entra in una partita</strong></button>
@@ -331,7 +336,7 @@ function setup(){
   view="setup";stage(false);
   app.innerHTML=`<div class="card"><h2>Prepara la partita</h2>
   <div class="field"><span>Materie</span><div class="chips">
-    ${Object.entries(CAT).map(([k,n])=>`<label><input type="checkbox" name="cat" value="${k}" checked> ${n}</label>`).join("")}</div></div>
+    ${Object.entries(CAT).map(([k,n])=>`<label><input type="checkbox" name="cat" value="${k}" checked> ${n}${k==="A"?" (bonus, 0 punti)":""}</label>`).join("")}</div></div>
   <div class="field"><span>Difficoltà</span><div class="chips">
     ${[["0","Mista"],["1","Facile ★"],["2","Media ★★"],["3","Difficile ★★★"]].map(([v,n],i)=>`<label><input type="radio" name="lv" value="${v}" ${i?"":"checked"}> ${n}</label>`).join("")}</div></div>
   <div class="field"><span>Quante domande</span><select id="num">${[10,15,20,30,999].map(n=>`<option value="${n}" ${n===15?"selected":""}>${n===999?"Tutte":n}</option>`).join("")}</select></div>
@@ -368,6 +373,7 @@ function setup(){
 const players=()=>H&&H.rr?H.rr.peers().filter(p=>!p.sameTab&&p.presence&&typeof p.presence.nick==="string"&&p.presence.nick.trim()):[];
 const nickOf=p=>p.presence.nick.trim().slice(0,20);
 const isLast=()=>H.i===H.list.length-1;
+const lastBonus=()=>H.list[H.i]&&H.list[H.i].cat==="A";
 const teamName=i=>H.teams===1?"Classe":TEAMS[i%H.teams][0];
 const teamCol=i=>H.teams===1?"var(--a1)":TEAMS[i%H.teams][1];
 function pub(){
@@ -403,7 +409,7 @@ function tick(){
   if(H.mode==="phone"){const ps=players(),q=H.list[H.i];const done=ps.filter(p=>p.presence.a&&p.presence.a.q===q.id).length;const ac=$("ac");if(ac)ac.textContent=`${done}/${ps.length} hanno risposto`;if(ps.length&&done===ps.length)return reveal()}
   if(left<=0)reveal();
 }
-function points(ms,lv,st){const f=Math.max(0,1-ms/(H.sec*1000));let p=(500+500*f)*MULT[lv]*(1+.1*Math.min(Math.max(st-1,0),5));if(isLast())p*=2;return Math.round(p)}
+function points(ms,lv,st){const f=Math.max(0,1-ms/(H.sec*1000));let p=(500+500*f)*MULT[lv]*(1+.1*Math.min(Math.max(st-1,0),5));if(isLast()&&!lastBonus())p*=2;return Math.round(p)}
 const ranking=()=>Object.entries(H.P).sort((a,b)=>b[1].s-a[1].s);
 function reveal(){
   if(H.ph!=="q")return;clearInterval(timerId);
@@ -413,13 +419,16 @@ function reveal(){
   if(H.mode==="phone"){
     for(const p of players()){
       const nick=nickOf(p),a=p.presence.a;const r=H.P[nick]||(H.P[nick]={s:0,g:0,st:0});
-      if(a&&a.q===q.id&&a.c>=0&&a.c<4){H.counts[a.c]++;
-        if(a.c===q.ans){r.st++;r.g=points(+a.t||0,q.lv,r.st);r.s+=r.g;if(!H.fast||a.t<H.fast[1])H.fast=[nick,Math.round(+a.t||0)]}else r.st=0}
-      else r.st=0;
+      const bonus=q.cat==="A",answered=a&&a.q===q.id&&a.c>=0&&a.c<4,right=answered&&a.c===q.ans;
+      if(answered)H.counts[a.c]++;
+      if(right&&(!H.fast||a.t<H.fast[1]))H.fast=[nick,Math.round(+a.t||0)];
+      if(bonus)continue; // domanda bonus: niente punti, la serie non cambia
+      if(right){r.st++;r.g=points(+a.t||0,q.lv,r.st);r.s+=r.g}else r.st=0;
     }
   }else{
     const t=H.P[teamName(H.i)];
-    if(H.pick!=null){H.counts[H.pick]=1;if(H.pick===q.ans){t.st++;t.g=points(H.sec*1000-(H.endsAt-H.pickAt),q.lv,t.st);t.s+=t.g}else t.st=0}else t.st=0;
+    if(q.cat==="A"){if(H.pick!=null)H.counts[H.pick]=1}
+    else if(H.pick!=null){H.counts[H.pick]=1;if(H.pick===q.ans){t.st++;t.g=points(H.sec*1000-(H.endsAt-H.pickAt),q.lv,t.st);t.s+=t.g}else t.st=0}else t.st=0;
   }
   H.ph="rev";send();hostRender();
   const anyOk=H.mode==="phone"?H.counts[q.ans]>0:H.pick===q.ans;anyOk?SFX.ok():SFX.bad();
@@ -431,7 +440,7 @@ function tilesHTML(q,state){
     const tag=state==="lim"?"button":"div";
     const n=state==="rev"&&H.mode==="phone"?`<span class="n">${H.counts[i]}</span>`:"";
     const k=state==="lim"?`<kbd>${i+1}</kbd>`:"";
-    return `<${tag} class="tile t${i} ${cls}" data-i="${i}"><span class="s">${SHAPE[i]}</span>${esc(t)}${k}${n}</${tag}>`}).join("")}</div>`;
+    return `<${tag} class="tile t${i} ${cls} ${fit(t)}" data-i="${i}"><span class="s">${SHAPE[i]}</span>${esc(t)}${k}${n}</${tag}>`}).join("")}</div>`;
 }
 function boardHTML(n){
   const r=ranking().slice(0,n);
@@ -457,13 +466,13 @@ function hostRender(){
   }
   const q=H.list[H.i];
   const turn=H.mode==="lim"&&H.teams>1&&H.ph!=="board"?`<span class="tag" style="background:${teamCol(H.i)}">Tocca ai ${teamName(H.i)}</span>`:"";
-  const head=`<div class="top"><span class="tag" style="background:var(--${q.cat})">${CAT[q.cat]} ${STARS[q.lv]}</span><span class="mute">Domanda ${H.i+1} di ${H.list.length}</span>${turn}${isLast()?`<span class="final">Ultima domanda · punti doppi</span>`:""}`;
+  const head=`<div class="top"><span class="tag" style="background:var(--${q.cat})">${CAT[q.cat]} ${STARS[q.lv]}</span><span class="mute">Domanda ${H.i+1} di ${H.list.length}</span>${turn}${q.cat==="A"?`<span class="final">Domanda bonus · non vale punti</span>`:isLast()?`<span class="final">Ultima domanda · punti doppi</span>`:""}`;
   if(H.ph==="pre"){
     app.innerHTML=`${head}</div><div class="count"><div><p class="mute" style="font-size:22px">Pronti?</p><div class="num" id="cnum">3</div></div></div>`;return;
   }
   if(H.ph==="q"){
     app.innerHTML=`${warn}${head}${H.mode==="phone"?`<span class="mute" id="ac"></span>`:""}<div class="ring" id="ring"><svg viewBox="0 0 80 80"><circle class="bgc" cx="40" cy="40" r="36"/><circle class="fg" id="fg" cx="40" cy="40" r="36" stroke-dasharray="226" stroke-dashoffset="0"/></svg><b id="tt">${H.sec}</b></div></div>
-    ${q.img?`<div class="qh"><h1>${esc(q.text)}</h1><div class="pic" style="background:var(--${q.cat})">${illus(q.img)}</div></div>`:`<h1>${esc(q.text)}</h1>`}${tilesHTML(q,H.mode==="lim"?"lim":"q")}
+    ${q.img?`<div class="qh"><h1 class="${q.text.length>75?"long":""}">${esc(q.text)}</h1><div class="pic" style="background:var(--${q.cat})">${illus(q.img)}</div></div>`:`<h1 class="${q.text.length>75?"long":""}">${esc(q.text)}</h1>`}${tilesHTML(q,H.mode==="lim"?"lim":"q")}
     <div class="row"><button class="btn alt" id="main">Mostra la risposta<kbd>Invio</kbd></button>${H.mode==="lim"?`<span class="mute">Toccate la casella scelta${H.teams>1?" dalla squadra":" dalla classe"}, o premete 1–4.</span>`:""}</div>`;
     $("main").onclick=reveal;
     app.querySelectorAll("button.tile").forEach(b=>b.onclick=()=>{H.pick=+b.dataset.i;H.pickAt=Date.now();reveal()});
@@ -477,10 +486,10 @@ function hostRender(){
   // risposta
   const clip=(CLIPS[q.key]&&(CLIPS[q.key].yt||CLIPS[q.key].file))?CLIPS[q.key]:null,tot=H.counts.reduce((a,b)=>a+b,0)||1;
   let verdict="";
-  if(H.mode==="lim"){const t=H.P[teamName(H.i)];verdict=H.pick==null?`<p class="fast">Tempo scaduto!</p>`:H.pick===q.ans?`<p class="fast" style="border-color:var(--ok)">Giusto! ${H.teams>1?esc(teamName(H.i))+" ":""}+${t.g} punti</p>`:`<p class="fast">Sbagliato…</p>`}
+  if(H.mode==="lim"){const t=H.P[teamName(H.i)];verdict=H.pick==null?`<p class="fast">Tempo scaduto!</p>`:H.pick===q.ans?`<p class="fast" style="border-color:var(--ok)">Giusto! ${q.cat==="A"?"(domanda bonus, niente punti)":(H.teams>1?esc(teamName(H.i))+" ":"")+"+"+t.g+" punti"}</p>`:`<p class="fast">Sbagliato…</p>`}
   else if(H.fast)verdict=`<p class="fast">⚡ Il più veloce: ${esc(H.fast[0])} in ${(H.fast[1]/1000).toFixed(1)} s</p>`;
   const dist=H.mode==="phone"?`<div class="dist">${q.opts.map((t,i)=>`<div><span>${SHAPE[i]}</span><i class="t${i}" style="width:0" data-w="${Math.max(2,H.counts[i]/tot*100)}%"></i><span>${H.counts[i]}</span></div>`).join("")}</div>`:"";
-  app.innerHTML=`${head}</div><h1>${esc(q.text)}</h1>${tilesHTML(q,"rev")}
+  app.innerHTML=`${head}</div><h1 class="${q.text.length>75?"long":""}">${esc(q.text)}</h1>${tilesHTML(q,"rev")}
   <div class="rev ${clip?"v":""}">
     ${clip&&clip.yt?`<div class="vid"><iframe id="yt" src="${ytEmbed(clip)}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen title="Spezzone video" style="width:100%;height:100%;border:0"></iframe></div>`:""}
     ${clip&&clip.file?`<div class="vid"><video id="vid" playsinline preload="auto" src="video/${encodeURIComponent(clip.file)}"></video><button class="play" id="vplay" hidden>▶ Guarda lo spezzone</button></div>`:""}
@@ -532,13 +541,13 @@ function playerRender(){
   const me=myScore(),ans=S.q&&P.my[S.q.id]!=null;
   const key=[S.e,S.ph,S.n,ans,me.s].join(":");
   if(key===P.last)return;P.last=key;
-  const head=`<div class="top"><span class="tag" style="background:var(--${S.cat||"A"})">${CAT[S.cat]||""} ${STARS[S.lv]||""}</span><span class="mute">${S.n}/${S.tot}</span>${S.last?`<span class="final">Punti doppi</span>`:""}<span style="margin-left:auto;font-weight:800">${me.s} pt</span></div>`;
+  const head=`<div class="top"><span class="tag" style="background:var(--${S.cat||"A"})">${CAT[S.cat]||""} ${STARS[S.lv]||""}</span><span class="mute">${S.n}/${S.tot}</span>${S.cat==="A"?`<span class="final">Bonus · 0 punti</span>`:S.last?`<span class="final">Punti doppi</span>`:""}<span style="margin-left:auto;font-weight:800">${me.s} pt</span></div>`;
   if(S.ph==="lobby"){app.innerHTML=wait("Aspetta che parta la partita sulla LIM.");return}
   if(S.ph==="pre"){app.innerHTML=`${head}<div class="big-msg"><div class="e">👀</div><h2>Guarda la LIM!</h2><p class="mute">La domanda sta per arrivare…</p></div>`;buzz(40);return}
   if(S.ph==="q"&&S.q){
     if(P.fx!=="q"+S.n){P.fx="q"+S.n;P.seen=Date.now()-((S.sec*1000)-S.left)}
     if(ans){const c=P.my[S.q.id];app.innerHTML=`${head}<div class="big-msg"><div class="e" style="color:var(--a${c})">${SHAPE[c]}</div><h2>Risposta inviata</h2><p class="mute">Aspetta che finisca il tempo…</p></div>`;return}
-    app.innerHTML=`${head}<p style="font-weight:700;font-size:18px">${esc(S.q.text)}</p><div class="grid ph">${S.q.opts.map((t,i)=>`<button class="tile t${i}" data-i="${i}"><span class="s">${SHAPE[i]}</span>${esc(t)}</button>`).join("")}</div>`;
+    app.innerHTML=`${head}<p style="font-weight:700;font-size:18px">${esc(S.q.text)}</p><div class="grid ph">${S.q.opts.map((t,i)=>`<button class="tile t${i} ${fit(t)}" data-i="${i}"><span class="s">${SHAPE[i]}</span>${esc(t)}</button>`).join("")}</div>`;
     app.querySelectorAll("button.tile").forEach(b=>b.onclick=()=>{
       const c=+b.dataset.i;P.my[S.q.id]=c;buzz(25);
       P.rr.presence({nick:P.nick,a:{q:S.q.id,c,t:Math.max(0,Date.now()-P.seen)}}).catch(()=>{});
@@ -549,7 +558,7 @@ function playerRender(){
     const mine=P.my[S.q.id],ok=mine===S.ans;
     if(P.fx!=="r"+S.n){P.fx="r"+S.n;if(mine!=null){ok?(SFX.ok(),buzz([30,40,30])):(SFX.bad(),buzz(200))}}
     app.innerHTML=`${head}<div class="big-msg" style="padding-bottom:6px"><div class="e" style="color:${mine==null?"var(--mute)":ok?"var(--ok)":"var(--a0)"}">${mine==null?"⏱":ok?"✓":"✗"}</div>
-    <h2>${mine==null?"Tempo scaduto":ok?"Giusto!":"Sbagliato"}</h2>${ok&&me.g?`<div class="gain">+${me.g}</div>`:""}${me.st>=2?`<div class="streak">🔥 ${me.st} di fila</div>`:""}
+    <h2>${mine==null?"Tempo scaduto":ok?"Giusto!":"Sbagliato"}</h2>${S.cat==="A"?`<p class="mute">Domanda bonus: non vale punti</p>`:ok&&me.g?`<div class="gain">+${me.g}</div>`:""}${me.st>=2?`<div class="streak">🔥 ${me.st} di fila</div>`:""}
     <p style="margin-top:14px">Risposta giusta: <b>${esc(S.q.opts[S.ans])}</b></p><p class="mute">${esc(S.expl||"")}</p></div>`;return;
   }
   if(S.ph==="board"){app.innerHTML=`${head}<div class="big-msg"><div class="e">${pos()}°</div><h2>${me.s} punti</h2><p class="mute">${pos()===1?"Sei in testa! 👑":"Guarda la classifica sulla LIM."}</p></div>`;return}
