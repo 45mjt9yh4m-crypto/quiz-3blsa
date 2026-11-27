@@ -283,9 +283,10 @@ function sbRoom(){
     const ch=client.channel(name,{config:{broadcast:{self:false},presence:{key:me}}});
     const hs={},pcbs=[];let list=[],cur={},done=false;
     ch.on("broadcast",{event:"state"},({payload})=>(hs.state||[]).forEach(f=>f({data:payload,sameTab:false})));
+    ch.on("broadcast",{event:"ans"},({payload})=>(hs.ans||[]).forEach(f=>f({data:payload,sameTab:false})));
     ch.on("presence",{event:"sync"},()=>{
       const st=ch.presenceState(),prev=list;
-      list=Object.entries(st).map(([k,arr])=>({peer:k,sameTab:k===me,presence:(arr&&arr[arr.length-1])||{}}));
+      list=Object.entries(st).map(([k,arr])=>({peer:k,sameTab:k===me,presence:(arr&&arr[0])||{}}));
       const joined=list.filter(p=>!prev.some(q=>q.peer===p.peer)),left=prev.filter(p=>!list.some(q=>q.peer===p.peer));
       pcbs.forEach(f=>f({peers:list,joined,left,updated:[]}));
     });
@@ -363,12 +364,15 @@ function setup(){
     const pool=read(),num=+$("num").value;
     const list=shuf(pool).slice(0,num).map((q,k)=>{const o=shuf(q[3].map((t,i)=>({t,i})));return{id:k+1,key:q[7],cat:q[0],lv:q[1],text:q[2],opts:o.map(x=>x.t),ans:o.findIndex(x=>x.i===0),expl:q[4],vq:q[5],img:q[6]}});
     const mode=app.querySelector("[name=mode]:checked").value;
-    H={mode,list,i:-1,ph:"lobby",sec:+$("sec").value,P:{},counts:[0,0,0,0],endsAt:0,epoch:Date.now(),pick:null,rr:null,code:null,warn:"",fast:null,prevRank:{},AV:{}};
+    H={mode,list,i:-1,ph:"lobby",sec:+$("sec").value,P:{},counts:[0,0,0,0],endsAt:0,epoch:Date.now(),pick:null,rr:null,code:null,warn:"",fast:null,prevRank:{},AV:{},A:{}};
     if(mode==="lim"){const n=+app.querySelector("[name=tm]:checked").value;H.teams=n;
       (n===1?[["Classe","var(--a1)"]]:TEAMS.slice(0,n)).forEach(([t])=>{H.P[t]={s:0,g:0,st:0};H.AV[t]=TEAM_AV[t]});return nextQ()}
     H.code=String(1000+Math.random()*9000|0);
     try{H.rr=await room.join("quiz-"+H.code)}catch(e){H.mode="lim";H.teams=1;H.P={Classe:{s:0,g:0,st:0}};H.warn="Non riesco ad aprire la stanza per i telefoni: si gioca sulla LIM.";return nextQ()}
     let known=0;
+    H.rr.on("ans",m=>{const d=m.data;if(!d||!H||H.ph!=="q"||d.e!==H.epoch)return;const q=H.list[H.i];if(!q||d.q!==q.id)return;
+      const nk=String(d.nick||"").trim().slice(0,20),c=+d.c;if(!nk||!(c>=0&&c<4))return;
+      if(!H.A[nk]){H.A[nk]={q:d.q,c,t:Math.max(0,+d.t||0)};if(AV.includes(d.av))H.AV[nk]=d.av}send()});
     H.rr.onPeers(ch=>{syncAv();if(ch.joined.length)send();const n=players().length;if(n>known&&H.ph==="lobby")SFX.join();known=n;if(view==="host"&&H.ph==="lobby")hostRender()});
     sendId=setInterval(send,1500);
     hostRender();
@@ -378,6 +382,8 @@ const players=()=>H&&H.rr?H.rr.peers().filter(p=>!p.sameTab&&p.presence&&typeof 
 const nickOf=p=>p.presence.nick.trim().slice(0,20);
 const avOf=p=>AV.includes(p.presence.av)?p.presence.av:"🙂";
 const syncAv=()=>{if(H)for(const p of players())H.AV[nickOf(p)]=avOf(p)};
+function answers(){const q=H.list[H.i],m={};for(const p of players()){const a=p.presence.a;m[nickOf(p)]=a&&a.q===q.id&&a.c>=0&&a.c<4?a:null}
+  for(const[k,a]of Object.entries(H.A))m[k]=a;return m}
 const isLast=()=>H.i===H.list.length-1;
 const lastBonus=()=>H.list[H.i]&&H.list[H.i].cat==="A";
 const teamName=i=>H.teams===1?"Classe":TEAMS[i%H.teams][0];
@@ -389,13 +395,13 @@ function pub(){
     cat:q&&q.cat,lv:q&&q.lv,
     q:q&&show?{id:q.id,text:q.text,opts:q.opts}:null,
     left:H.ph==="q"?Math.max(0,H.endsAt-Date.now()):0,
-    ans:H.ph==="rev"?q.ans:null,expl:H.ph==="rev"?q.expl:null,sc,fast:H.ph==="rev"?H.fast:null};
+    ans:H.ph==="rev"?q.ans:null,got:H.ph==="q"?Object.keys(H.A):[],expl:H.ph==="rev"?q.expl:null,sc,fast:H.ph==="rev"?H.fast:null};
 }
 function send(){if(H&&H.rr)H.rr.emit("state",pub()).catch(e=>{if(e&&e.code==="not_permitted"&&!H.warn){H.warn="Solo chi può modificare questa pagina può condurre con i telefoni.";hostRender()}})}
 function nextQ(){
   H.i++;
   if(H.i>=H.list.length){H.ph="end";send();hostRender();const ep=H.epoch,at=(ms,f)=>setTimeout(()=>{if(H&&H.epoch===ep&&H.ph==="end")f()},ms);at(500,()=>SFX.count());at(1700,()=>[392,523].forEach((f,i)=>tone(f,.2,"triangle",.17,i*.1)));at(3000,()=>{SFX.fan();confetti()});return}
-  H.ph="pre";H.counts=[0,0,0,0];H.pick=null;H.fast=null;
+  H.ph="pre";H.counts=[0,0,0,0];H.pick=null;H.fast=null;H.A={};
   send();hostRender();
   let c=3;SFX.count();
   clearInterval(preId);preId=setInterval(()=>{c--;const el=$("cnum");if(c>0){if(el){el.textContent=c;el.style.animation="none";void el.offsetWidth;el.style.animation=""}SFX.count()}else{clearInterval(preId);startQ()}},1000);
@@ -412,7 +418,7 @@ function tick(){
   if(fg)fg.style.strokeDashoffset=String(226*(1-left/(H.sec*1000)));
   if(tt)tt.textContent=s;if(ring)ring.classList.toggle("hot",s<=5);
   if(s<=5&&s>0&&s!==H.lastSec)SFX.tick();H.lastSec=s;
-  if(H.mode==="phone"){const ps=players(),q=H.list[H.i];const done=ps.filter(p=>p.presence.a&&p.presence.a.q===q.id).length;const ac=$("ac");if(ac)ac.textContent=`${done}/${ps.length} hanno risposto`;if(ps.length&&done===ps.length)return reveal()}
+  if(H.mode==="phone"){const m=answers(),tot=Object.keys(m).length,done=Object.values(m).filter(Boolean).length;const ac=$("ac");if(ac)ac.textContent=`${done}/${tot} hanno risposto`;if(tot&&done===tot)return reveal()}
   if(left<=0)reveal();
 }
 function points(ms,lv,st){const f=Math.max(0,1-ms/(H.sec*1000));let p=(500+500*f)*MULT[lv]*(1+.1*Math.min(Math.max(st-1,0),5));if(isLast()&&!lastBonus())p*=2;return Math.round(p)}
@@ -424,8 +430,8 @@ function reveal(){
   for(const v of Object.values(H.P))v.g=0;
   if(H.mode==="phone"){
     syncAv();
-    for(const p of players()){
-      const nick=nickOf(p),a=p.presence.a;const r=H.P[nick]||(H.P[nick]={s:0,g:0,st:0});
+    for(const[nick,a]of Object.entries(answers())){
+      const r=H.P[nick]||(H.P[nick]={s:0,g:0,st:0});
       const bonus=q.cat==="A",answered=a&&a.q===q.id&&a.c>=0&&a.c<4,right=answered&&a.c===q.ans;
       if(answered)H.counts[a.c]++;
       if(right&&(!H.fast||a.t<H.fast[1]))H.fast=[nick,Math.round(+a.t||0)];
@@ -538,9 +544,9 @@ function joinForm(msg){
     const av=app.querySelector("[name=av]:checked").value;
     try{localStorage.setItem("quiz-nick",nk);localStorage.setItem("quiz-av",av)}catch(e){}
     let rr;try{rr=await room.join("quiz-"+code)}catch(err){return joinForm("Non riesco a entrare. Controlla il codice e riprova.")}
-    P={rr,code,nick:nk,av,S:null,seen:0,my:{},last:"",fx:""};
+    P={rr,code,nick:nk,av,ans:null,S:null,seen:0,my:{},last:"",fx:""};
     rr.presence({nick:nk,av,a:null}).catch(()=>{});
-    rr.on("state",m=>{if(m.sameTab||!m.data)return;P.S=m.data;playerRender()});
+    rr.on("state",m=>{if(m.sameTab||!m.data)return;P.S=m.data;const A=P.ans;if(A&&m.data.ph==="q"&&m.data.e===A.e&&m.data.q&&m.data.q.id===A.q&&!(m.data.got||[]).includes(P.nick))P.rr.emit("ans",A).catch(()=>{});playerRender()});
     playerRender();
   };
 }
@@ -550,7 +556,7 @@ function playerRender(){
   view="player";const S=P.S;
   const wait=t=>`<div class="big-msg"><div class="me-av">${P.av}</div><h2>Sei dentro, ${esc(P.nick)}!</h2><p class="mute">${t}</p></div>`;
   if(!S){app.innerHTML=wait("Aspetta che parta la partita sulla LIM.");return}
-  const me=myScore(),ans=S.q&&P.my[S.q.id]!=null;
+  const me=myScore(),qk=S.q?S.e+":"+S.q.id:"",ans=S.q&&P.my[qk]!=null;
   const key=[S.e,S.ph,S.n,ans,me.s].join(":");
   if(key===P.last)return;P.last=key;
   bonusOn(S.cat==="A"&&["pre","q","rev"].includes(S.ph));
@@ -559,16 +565,17 @@ function playerRender(){
   if(S.ph==="pre"){app.innerHTML=`${head}<div class="big-msg">${S.cat==="A"?`<p class="bpre" style="font-size:44px">🎁 Bonus!</p><h2>Guarda la LIM!</h2><p class="mute">Domanda bonus: non vale punti, gioca per divertimento</p>`:`<div class="e">👀</div><h2>Guarda la LIM!</h2><p class="mute">La domanda sta per arrivare…</p>`}</div>`;buzz(40);return}
   if(S.ph==="q"&&S.q){
     if(P.fx!=="q"+S.n){P.fx="q"+S.n;P.seen=Date.now()-((S.sec*1000)-S.left)}
-    if(ans){const c=P.my[S.q.id];app.innerHTML=`${head}<div class="big-msg"><div class="e" style="color:var(--a${c})">${SHAPE[c]}</div><h2>Risposta inviata</h2><p class="mute">Aspetta che finisca il tempo…</p></div>`;return}
+    if(ans){const c=P.my[qk];app.innerHTML=`${head}<div class="big-msg"><div class="e" style="color:var(--a${c})">${SHAPE[c]}</div><h2>Risposta inviata</h2><p class="mute">Aspetta che finisca il tempo…</p></div>`;return}
     app.innerHTML=`${head}${S.cat==="A"?BBAR:""}<p style="font-weight:700;font-size:18px">${esc(S.q.text)}</p><div class="grid ph">${S.q.opts.map((t,i)=>`<button class="tile t${i} ${fit(t)}" data-i="${i}"><span class="s">${SHAPE[i]}</span>${esc(t)}</button>`).join("")}</div>`;
     app.querySelectorAll("button.tile").forEach(b=>b.onclick=()=>{
-      const c=+b.dataset.i;P.my[S.q.id]=c;buzz(25);
-      P.rr.presence({nick:P.nick,av:P.av,a:{q:S.q.id,c,t:Math.max(0,Date.now()-P.seen)}}).catch(()=>{});
+      const c=+b.dataset.i,t=Math.max(0,Date.now()-P.seen);P.my[qk]=c;buzz(25);
+      P.ans={e:S.e,q:S.q.id,c,t,nick:P.nick,av:P.av};P.rr.emit("ans",P.ans).catch(()=>{});
+      P.rr.presence({nick:P.nick,av:P.av,a:{q:S.q.id,c,t}}).catch(()=>{});
       playerRender()});
     return;
   }
   if(S.ph==="rev"&&S.q){
-    const mine=P.my[S.q.id],ok=mine===S.ans;
+    const mine=P.my[qk],ok=mine===S.ans;
     if(P.fx!=="r"+S.n){P.fx="r"+S.n;if(mine!=null){ok?(SFX.ok(),buzz([30,40,30])):(SFX.bad(),buzz(200))}}
     app.innerHTML=`${head}<div class="big-msg" style="padding-bottom:6px"><div class="e" style="color:${mine==null?"var(--mute)":ok?"var(--ok)":"var(--a0)"}">${mine==null?"⏱":ok?"✓":"✗"}</div>
     <h2>${mine==null?"Tempo scaduto":ok?"Giusto!":"Sbagliato"}</h2>${S.cat==="A"?`<p class="bnote" style="margin:8px auto 0">🎁 Domanda bonus: non conta nella classifica</p>`:ok&&me.g?`<div class="gain">+${me.g}</div>`:""}${me.st>=2?`<div class="streak">🔥 ${me.st} di fila</div>`:""}
