@@ -4,5 +4,7 @@ Quiz di chimica, biologia e attualità per la classe: chi conduce usa la LIM, gl
 
 - `index.html` — il gioco e le domande
 - `config.js` — collegamento a Supabase Realtime (chiave pubblicabile)
-- `clips.json` — spezzoni video per domanda, es. `{"A05": {"yt": "ID", "start": 12, "end": 25}}`
-- `video/` — file MP4 per gli spezzoni
+- immagini e spezzoni: elenco `MEDIA` in `index.html`, per codice domanda (es. `A07`); si vedono dopo la risposta, sulla LIM
+- `img/` — immagini delle domande
+- `video/` — file MP4 degli spezzoni
+- `clips.json` — facoltativo, spezzoni YouTube in più, es. `{"A02": {"yt": "ID", "start": 12, "end": 25}}`

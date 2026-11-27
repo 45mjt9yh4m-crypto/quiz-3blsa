@@ -69,9 +69,11 @@ button.tile{cursor:pointer}button.tile:active{transform:scale(.97)}
 .t0{background:var(--a0)}.t1{background:var(--a1)}.t2{background:var(--a2)}.t3{background:var(--a3)}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:20px}
 .rev{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-top:18px}
-.rev.v{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
+.rev.v{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);align-items:start}.rev.v .grid{grid-template-columns:minmax(0,1fr)}.rev.v .tile{min-height:60px;padding-top:10px;padding-bottom:10px}.media{display:grid;justify-items:center}
 .vid{position:relative;background:#000;border-radius:14px;overflow:hidden;aspect-ratio:16/9}
 .vid video{width:100%;height:100%;object-fit:contain;display:block}
+.vid.fit{aspect-ratio:auto;width:100%}.vid.fit video{height:auto;max-height:64vh}
+.vid.photo{aspect-ratio:auto;display:grid;place-items:center;animation:pop .5s ease}.vid.photo img{width:100%;max-height:64vh;object-fit:contain;display:block}
 .vid .play{position:absolute;inset:0;border:0;background:rgba(0,0,0,.45);color:#fff;font:800 22px Sora;cursor:pointer}
 .expl{font-size:clamp(17px,1.7vw,22px);border-left:5px solid var(--ok);padding:6px 0 6px 16px;margin:0}
 .dist{display:grid;gap:6px;margin-top:4px}
@@ -99,10 +101,6 @@ button.tile{cursor:pointer}button.tile:active{transform:scale(.97)}
 .streak{display:inline-block;background:var(--a2);color:#16141f;border-radius:999px;padding:4px 14px;font-weight:800;margin-top:6px}
 .warn{background:light-dark(#fff1d1,#3b2f12);color:var(--ink);border-radius:12px;padding:12px 14px;margin:12px 0}
 .final{background:var(--a2);color:#16141f;border-radius:10px;padding:6px 14px;font-weight:800;animation:pulse 1.2s ease infinite}
-.clips .it{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 14px;padding:14px 0;border-top:1px solid var(--line)}
-.clips .ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.clips input[type=number]{width:96px}
-.clips video{width:min(100%,360px);border-radius:10px;background:#000;display:block;margin-top:8px}
 .ok-badge{color:var(--ok);font-weight:800}
 .file{position:relative;overflow:hidden;display:inline-flex}
 .file input{position:absolute;inset:0;opacity:0;cursor:pointer}
@@ -182,22 +180,10 @@ const Q=[
 ["A",2,"Come si chiamano due burger «romani» inventati da Ciccio Gamer?",["Carbonaro89 e AmatriCiccio","CiccioBurger e Hakuna Burger","Matata e Simba","Romano89 e Cacio89"],"Uniscono la cucina romana all'hamburger.","Ciccio Gamer AmatriCiccio"],
 ["A",2,"Come si chiamano le gare su GTA 5 di Blur?",["Sdrogo Corse","Blur Racing","Fast & Blur","GTA Party"],"Uno dei suoi format più famosi su Twitch.","Blur Sdrogo Corse GTA"],
 ["A",2,"Chi è l'idolo di Blur fin da bambino?",["Totti","Del Piero","Ronaldo","Buffon"],"Con Totti ha anche rappresentato l'Italia nella Kings League."],
-["A",2,"Quale parola, con tre punti esclamativi, è la descrizione del canale YouTube di Marza?",["ANDIAMO!!!","VAMOS!!!","FORZA!!!","DAJE!!!"],"Il canale MarzaTV ha come descrizione solo «ANDIAMO!!!»."],
-["A",2,"Il meme «Mio Padre» parla del «Volpe». Chi è?",["Volpescu","Moonryde","Blur","Zano"],"Giovanni «Volpescu» Ballerini, streamer amico di Dario Moccia.","Linguaggio di Venz mio padre"],
-["A",2,"A quali animali ha abbaiato Speed durante un safari in Botswana?",["Cervi","Leoni","Elefanti","Giraffe"],"È successo durante il tour «Speed Does Africa».","IShowSpeed Botswana safari"],
-["A",2,"Come si chiama il gruppo di amici creator di Kai Cenat?",["AMP","FaZe","Sidemen","OTK"],"Nell'AMP ci sono anche Duke Dennis, Fanum, Agent 00 e ImDavisss."],
-["A",2,"Quale ritornello famosissimo usa «Dogs», la canzone di Kai Cenat e Speed?",["Who Let the Dogs Out","Old Town Road","Baby Shark","Gangnam Style"],"Riprende il ritornello dei Baha Men.","Kai Cenat IShowSpeed Dogs"],
-["A",2,"Come si chiamano le maratone di live lunghe un mese di Kai Cenat?",["Mafiathon","Kaithon","Streamathon","Subathon King"],"Nella Mafiathon 3 ha battuto il record di abbonati su Twitch."],
 ["A",3,"Qual è il vero nome di Blur?",["Gianmarco Tocco","Francesco Marzano","Mirko Alessandrini","Dario Ferracci"],"Francesco Marzano è Marza, Mirko Alessandrini è Ciccio Gamer, Dario Ferracci è Moonryde."],
-["A",3,"In quale castello si è svolto Kingdom of Chaos?",["Castello Orsini-Odescalchi di Bracciano","Castel Sant'Angelo","Castello Sforzesco","Castello di Miramare"],"25 creator divisi in 5 squadre, a Bracciano."],
 ["A",3,"Qual è il vero nome di Ciccio Gamer?",["Mirko Alessandrini","Marco Alessandri","Mirko Alessandrelli","Francesco Merrino"],"Mirko Alessandrini, romano, classe 1989."],
 ["A",3,"Come si chiama il fratello di Marco Merrino che compare nei suoi video?",["Ciccio Merrino","Luca Merrino","Peppe Merrino","Dario Merrino"],"Francesco «Ciccio» Merrino."],
-["A",3,"In che anno Dario Moccia è sbarcato su Twitch?",["2018","2015","2020","2022"],"Il 22 maggio 2018."],
-["A",3,"Di quale città è IShowSpeed?",["Cincinnati","New York","Los Angeles","Atlanta"],"Darren Watkins Jr. è di Cincinnati, in Ohio."],
-["A",3,"Nella Mafiathon 3 Kai Cenat è stato il primo streamer a superare…",["1 milione di abbonati attivi","1 milione di follower","100 ore di diretta","10 milioni di spettatori"],"Un record mai visto su Twitch, a settembre 2025."],
-["A",3,"Quale campione NBA ha tagliato i capelli a Kai Cenat durante la Mafiathon 3?",["LeBron James","Stephen Curry","Kevin Durant","Shaquille O'Neal"],"Uno dei momenti più virali della maratona.","Kai Cenat LeBron haircut"],
-["A",3,"Di quale città è Marza?",["Bari","Roma","Napoli","Milano"],"Francesco Marzano è barese."],
-["A",3,"Come si intitola la canzone che Speed ha dedicato a Ronaldo nel 2022?",["Ronaldo (Sewey)","Siuuu Song","CR7","Champions"],"«Champions» invece è quella che ha cantato alla finale dei Mondiali 2026.","IShowSpeed Ronaldo Sewey"]
+["A",3,"Di quale città è Marza?",["Bari","Roma","Napoli","Milano"],"Francesco Marzano è barese."]
 ];
 
 const CI=["atom","orbital","table","light","table","flask","table","flask","table","flask","table","flask","table","flask","table","orbital","flask","flask","light","flask","orbital"];
@@ -217,6 +203,16 @@ cells:`<g ${W}><circle cx="70" cy="62" r="34"/><circle cx="134" cy="56" r="28"/>
 body:`<g fill="#fff" opacity=".9"><circle cx="100" cy="24" r="15"/><path d="M76 46h48l14 52-12 3-12-36v85h-14v-50h-0v50H86V65l-12 36-12-3z"/></g>`
 };
 {const n={C:0,B:0,A:0};Q.forEach(r=>{n[r[0]]++;r[7]=r[0]+String(n[r[0]]).padStart(2,"0")})}
+/* immagini e spezzoni per codice domanda (file nelle cartelle img/ e video/) */
+const MEDIA={
+A01:{file:"a01-moccia-sbusto.mp4"},
+A04:{file:"a04-speed-siuuu.mp4"},
+A05:{file:"a05-speed-abbaia.mp4"},
+A07:{pic:"a07-ronaldo.jpg"},
+A08:{pic:"a08-paguro.jpg"},
+A11:{pic:"a11-totti.jpg"},
+A13:{pic:"a13-ciccio-gamer.jpg"}
+};
 const illus=k=>ILL[k]?`<svg viewBox="0 0 200 160" role="img" aria-label="Illustrazione">${ILL[k]}</svg>`:"";
 
 const CAT={C:"Chimica",B:"Biologia",A:"Attualità"};
@@ -255,7 +251,7 @@ function confetti(){
 }
 
 /* ---------- collegamento: Supabase Realtime ---------- */
-let room=null,ready=false,CLIPS={},cfgErr="";
+let room=null,ready=false,CLIPS=Object.fromEntries(Object.entries(MEDIA).filter(([k,m])=>m.file||m.yt)),cfgErr="";
 function sbRoom(){
   const C=window.QUIZ_CONFIG||{};
   if(!window.supabase||!C.supabaseUrl||!C.supabaseKey||/INSERISCI/.test(C.supabaseUrl+C.supabaseKey)){cfgErr=!window.supabase?"Non riesco a caricare Supabase: controlla la connessione.":"Manca la configurazione di Supabase in config.js.";return null}
@@ -284,7 +280,7 @@ function sbRoom(){
   })}};
 }
 room=sbRoom();ready=true;
-fetch("clips.json",{cache:"no-store"}).then(r=>r.ok?r.json():{}).then(j=>{CLIPS=j||{};if(view==="clips")clipsView()}).catch(()=>{});
+fetch("clips.json",{cache:"no-store"}).then(r=>r.ok?r.json():{}).then(j=>{Object.assign(CLIPS,j||{})}).catch(()=>{});
 let view="home",timerId=null,sendId=null,preId=null;
 const stage=on=>document.body.classList.toggle("stage",!!on);
 
@@ -297,31 +293,12 @@ function home(){
   <div class="home">
     <button class="big" style="background:var(--a1)" id="goHost" data-sym="▲"><span>Sulla LIM</span><strong>Conduci la partita</strong></button>
     <button class="big" style="background:var(--a0)" id="goPlay" data-sym="●" ${can?"":"disabled"}><span>Dal telefono</span><strong>Entra in una partita</strong></button>
-    <button class="big" style="background:var(--a3)" id="goClips" data-sym="▶"><span>Per chi prepara</span><strong>Codici e spezzoni video</strong></button>
   </div>
   ${!can?`<p class="warn">Gioco con i telefoni non disponibile: ${esc(cfgErr)} Si può comunque giocare a squadre sulla LIM.</p>`:""}`;
   $("goHost").onclick=setup;$("goPlay").onclick=()=>joinForm();
-  if($("goClips"))$("goClips").onclick=()=>clipsView();
 }
 
-/* ---------- CODICI E SPEZZONI ---------- */
-let clipFilter="A";
-function clipsView(){
-  view="clips";stage(false);
-  const list=Q.filter(q=>clipFilter==="*"||q[0]===clipFilter);
-  app.innerHTML=`<div class="card clips"><h2>Codici e spezzoni video</h2>
-  <p>Ogni domanda ha un codice. Per aggiungere uno spezzone si scrive il codice nel file <b>clips.json</b> del sito, in uno di questi due modi:</p>
-  <pre style="background:var(--bg);padding:12px;border-radius:10px">{
-  "A05": { "yt": "ID_DEL_VIDEO", "start": 12, "end": 25 },
-  "A06": { "file": "speed.mp4", "start": 0, "end": 10 }
-}</pre>
-  <p class="mute">«yt» è il codice del video YouTube (quello dopo watch?v=). Un «file» va messo nella cartella video del sito. «start» ed «end» sono i secondi.</p>
-  <div class="chips" style="margin:14px 0">${[["A","Attualità"],["C","Chimica"],["B","Biologia"],["*","Tutte"]].map(([k,t])=>`<label><input type="radio" name="cf" value="${k}" ${k===clipFilter?"checked":""}> ${t}</label>`).join("")}</div>
-  <div>${list.map(q=>{const c=CLIPS[q[7]];return `<div class="it"><div><b>${q[7]}</b> · ${esc(q[2])}<br><span class="mute">Risposta: ${esc(q[3][0])}</span></div><div>${c?`<span class="ok-badge">✓ ${c.yt?"YouTube":"file"} ${+c.start||0}–${c.end?+c.end:"fine"} s</span>`:`<span class="mute">nessuno</span>`}</div></div>`}).join("")}</div>
-  <div class="row"><button class="btn" id="back">Indietro</button></div></div>`;
-  app.querySelectorAll("[name=cf]").forEach(r=>r.onchange=()=>{clipFilter=r.value;clipsView()});
-  $("back").onclick=home;
-}
+/* ---------- SPEZZONI ---------- */
 function clipPlay(v,c,overlay){
   const st=+c.start||0,en=+c.end||0;
   const go=()=>{try{v.currentTime=st}catch(e){}v.play().then(()=>{if(overlay)overlay.remove()}).catch(()=>{if(overlay)overlay.hidden=false})};
@@ -484,18 +461,19 @@ function hostRender(){
     $("main").onclick=nextQ;return;
   }
   // risposta
-  const clip=(CLIPS[q.key]&&(CLIPS[q.key].yt||CLIPS[q.key].file))?CLIPS[q.key]:null,tot=H.counts.reduce((a,b)=>a+b,0)||1;
+  const clip=(CLIPS[q.key]&&(CLIPS[q.key].yt||CLIPS[q.key].file))?CLIPS[q.key]:null,pic=!clip&&MEDIA[q.key]&&MEDIA[q.key].pic,tot=H.counts.reduce((a,b)=>a+b,0)||1;
   let verdict="";
   if(H.mode==="lim"){const t=H.P[teamName(H.i)];verdict=H.pick==null?`<p class="fast">Tempo scaduto!</p>`:H.pick===q.ans?`<p class="fast" style="border-color:var(--ok)">Giusto! ${q.cat==="A"?"(domanda bonus, niente punti)":(H.teams>1?esc(teamName(H.i))+" ":"")+"+"+t.g+" punti"}</p>`:`<p class="fast">Sbagliato…</p>`}
   else if(H.fast)verdict=`<p class="fast">⚡ Il più veloce: ${esc(H.fast[0])} in ${(H.fast[1]/1000).toFixed(1)} s</p>`;
   const dist=H.mode==="phone"?`<div class="dist">${q.opts.map((t,i)=>`<div><span>${SHAPE[i]}</span><i class="t${i}" style="width:0" data-w="${Math.max(2,H.counts[i]/tot*100)}%"></i><span>${H.counts[i]}</span></div>`).join("")}</div>`:"";
-  app.innerHTML=`${head}</div><h1 class="${q.text.length>75?"long":""}">${esc(q.text)}</h1>${tilesHTML(q,"rev")}
-  <div class="rev ${clip?"v":""}">
+  const media=clip||pic?`<div class="media">
     ${clip&&clip.yt?`<div class="vid"><iframe id="yt" src="${ytEmbed(clip)}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen title="Spezzone video" style="width:100%;height:100%;border:0"></iframe></div>`:""}
-    ${clip&&clip.file?`<div class="vid"><video id="vid" playsinline preload="auto" src="video/${encodeURIComponent(clip.file)}"></video><button class="play" id="vplay" hidden>▶ Guarda lo spezzone</button></div>`:""}
-    <div style="display:grid;gap:14px;align-content:start"><p class="expl">${esc(q.expl)}</p>${verdict}${dist}
-    ${!clip&&q.vq?`<p><a href="${yt(q.vq)}" target="_blank" rel="noopener">▶ Cerca il video su YouTube</a></p>`:""}</div>
-  </div>
+    ${pic?`<div class="vid photo"><img src="img/${encodeURIComponent(pic)}" alt=""></div>`:""}
+    ${clip&&clip.file?`<div class="vid fit"><video id="vid" playsinline preload="auto" src="video/${encodeURIComponent(clip.file)}"></video><button class="play" id="vplay" hidden>▶ Guarda lo spezzone</button></div>`:""}</div>`:"";
+  const info=`<div style="display:grid;gap:14px;align-content:start">${media?tilesHTML(q,"rev"):""}<p class="expl">${esc(q.expl)}</p>${verdict}${dist}
+    ${!clip&&q.vq?`<p><a href="${yt(q.vq)}" target="_blank" rel="noopener">▶ Cerca il video su YouTube</a></p>`:""}</div>`;
+  app.innerHTML=`${head}</div><h1 class="${q.text.length>75?"long":""}">${esc(q.text)}</h1>${media?"":tilesHTML(q,"rev")}
+  <div class="rev ${media?"v":""}">${info}${media}</div>
   <div class="row"><button class="btn go" id="main">Classifica<kbd>Invio</kbd></button>${clip?`<button class="btn alt" id="again">↻ Rivedi</button>`:""}</div>`;
   $("main").onclick=()=>{const v=$("vid");if(v)v.pause();toBoard()};
   requestAnimationFrame(()=>app.querySelectorAll(".dist i").forEach(i=>i.style.width=i.dataset.w));
