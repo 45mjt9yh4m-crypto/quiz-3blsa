@@ -334,6 +334,18 @@ function clipPlay(v,c,overlay){
 }
 
 /* ---------- CONDUTTORE ---------- */
+/* domande bonus sparse: circa 1 ogni 4, mai di fila, mai la prima né l'ultima */
+function spread(pool,num){
+  const sci=shuf(pool.filter(q=>q[0]!=="A")),bon=shuf(pool.filter(q=>q[0]==="A"));
+  if(!sci.length||!bon.length)return shuf(pool).slice(0,num);
+  const n=Math.min(num,pool.length);
+  let nb=num>=pool.length?bon.length:Math.min(bon.length,Math.max(1,Math.round(n/4)),Math.floor((n-1)/2));
+  const ns=Math.min(sci.length,n-nb);nb=Math.min(bon.length,n-ns,ns-1);if(nb<1)return sci.slice(0,n);
+  const tot=ns+nb,slots=[],gap=tot/nb;
+  for(let i=0;i<nb;i++){let p=Math.round(gap*(i+.5)+(Math.random()-.5)*(gap-2));p=Math.max(1,Math.min(tot-2,p));while(slots.includes(p)||slots.includes(p-1)||slots.includes(p+1))p++;if(p<=tot-2)slots.push(p)}
+  const out=[];let si=0,bi=0;for(let i=0;i<tot;i++)out.push(slots.includes(i)&&bi<bon.length?bon[bi++]:sci[si++]);
+  return out.filter(Boolean);
+}
 let H=null;
 function setup(){
   view="setup";stage(false);
@@ -362,7 +374,7 @@ function setup(){
   $("go").onclick=async()=>{
     au();
     const pool=read(),num=+$("num").value;
-    const list=shuf(pool).slice(0,num).map((q,k)=>{const o=shuf(q[3].map((t,i)=>({t,i})));return{id:k+1,key:q[7],cat:q[0],lv:q[1],text:q[2],opts:o.map(x=>x.t),ans:o.findIndex(x=>x.i===0),expl:q[4],vq:q[5],img:q[6]}});
+    const list=spread(pool,num).map((q,k)=>{const o=shuf(q[3].map((t,i)=>({t,i})));return{id:k+1,key:q[7],cat:q[0],lv:q[1],text:q[2],opts:o.map(x=>x.t),ans:o.findIndex(x=>x.i===0),expl:q[4],vq:q[5],img:q[6]}});
     const mode=app.querySelector("[name=mode]:checked").value;
     H={mode,list,i:-1,ph:"lobby",sec:+$("sec").value,P:{},counts:[0,0,0,0],endsAt:0,epoch:Date.now(),pick:null,rr:null,code:null,warn:"",fast:null,prevRank:{},AV:{},A:{}};
     if(mode==="lim"){const n=+app.querySelector("[name=tm]:checked").value;H.teams=n;
