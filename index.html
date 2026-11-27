@@ -335,15 +335,23 @@ function clipPlay(v,c,overlay){
 
 /* ---------- CONDUTTORE ---------- */
 /* domande bonus sparse: circa 1 ogni 4, mai di fila, mai la prima né l'ultima */
+/* domande già uscite (salvate sulla LIM): prima si pescano quelle nuove */
+const qid=q=>hash(q[2]);
+const usedGet=()=>{try{return new Set(JSON.parse(localStorage.getItem("quiz-used")||"[]"))}catch(e){return new Set()}};
+const usedSet=u=>{try{localStorage.setItem("quiz-used",JSON.stringify([...u]))}catch(e){}};
+const freshFirst=a=>{const U=usedGet();return shuf(a.filter(q=>!U.has(qid(q)))).concat(shuf(a.filter(q=>U.has(qid(q)))))};
+function markUsed(pool,chosen){const U=usedGet();chosen.forEach(q=>U.add(qid(q)));
+  if(pool.every(q=>U.has(qid(q)))){U.clear();chosen.forEach(q=>U.add(qid(q)))}usedSet(U)}
 function spread(pool,num){
-  const sci=shuf(pool.filter(q=>q[0]!=="A")),bon=shuf(pool.filter(q=>q[0]==="A"));
-  if(!sci.length||!bon.length)return shuf(pool).slice(0,num);
+  const sci=freshFirst(pool.filter(q=>q[0]!=="A")),bon=freshFirst(pool.filter(q=>q[0]==="A"));
+  if(!sci.length||!bon.length)return shuf(freshFirst(pool).slice(0,num));
   const n=Math.min(num,pool.length);
   let nb=num>=pool.length?bon.length:Math.min(bon.length,Math.max(1,Math.round(n/4)),Math.floor((n-1)/2));
-  const ns=Math.min(sci.length,n-nb);nb=Math.min(bon.length,n-ns,ns-1);if(nb<1)return sci.slice(0,n);
+  const ns=Math.min(sci.length,n-nb);nb=Math.min(bon.length,n-ns,ns-1);if(nb<1)return shuf(sci.slice(0,n));
+  const sciS=shuf(sci.slice(0,ns)),bonS=shuf(bon.slice(0,nb));
   const tot=ns+nb,slots=[],gap=tot/nb;
   for(let i=0;i<nb;i++){let p=Math.round(gap*(i+.5)+(Math.random()-.5)*(gap-2));p=Math.max(1,Math.min(tot-2,p));while(slots.includes(p)||slots.includes(p-1)||slots.includes(p+1))p++;if(p<=tot-2)slots.push(p)}
-  const out=[];let si=0,bi=0;for(let i=0;i<tot;i++)out.push(slots.includes(i)&&bi<bon.length?bon[bi++]:sci[si++]);
+  const out=[];let si=0,bi=0;for(let i=0;i<tot;i++)out.push(slots.includes(i)&&bi<bonS.length?bonS[bi++]:sciS[si++]);
   return out.filter(Boolean);
 }
 let H=null;
@@ -363,10 +371,13 @@ function setup(){
     <label><input type="radio" name="mode" value="lim" ${room?"":"checked"}> A squadre sulla LIM</label></div></div>
   <div class="field" id="tf"><span>Squadre (a turno)</span><div class="chips">
     ${[1,2,3,4].map(n=>`<label><input type="radio" name="tm" value="${n}" ${n===2?"checked":""}> ${n===1?"Tutta la classe":n}</label>`).join("")}</div></div>
-  <p class="mute" id="avail"></p>
+  <p class="mute" id="avail"></p><p class="mute" id="usedrow"></p>
   <div class="row"><button class="btn go" id="go">Crea la partita</button><button class="btn alt" id="back">Indietro</button></div></div>`;
   const read=()=>{const cats=[...app.querySelectorAll("[name=cat]:checked")].map(e=>e.value);if(app.querySelector("[name=bonus]:checked").value==="1")cats.push("A");const lv=+app.querySelector("[name=lv]:checked").value;return Q.filter(q=>cats.includes(q[0])&&(!lv||q[1]===lv))};
   const upd=()=>{const n=read().length,lim=app.querySelector("[name=mode]:checked").value==="lim";$("tf").hidden=!lim;
+    const U=usedGet(),nu=read().filter(q=>U.has(qid(q))).length;
+    $("usedrow").innerHTML=nu?`Già uscite nelle partite precedenti: ${nu} (verranno pescate per ultime) · <button type="button" class="btn alt" id="reset" style="min-height:36px;padding:6px 12px;font-size:14px">Ricomincia da capo</button>`:"";
+    if($("reset"))$("reset").onclick=()=>{usedSet(new Set());upd()};
     const cl=read().filter(q=>CLIPS[q[7]]).length;
     const nb=read().filter(q=>q[0]==="A").length;$("avail").textContent=`Domande disponibili: ${n}`+(nb?` · di cui bonus: ${nb}`:"")+(cl?` · con spezzone video: ${cl}`:"");$("go").disabled=!n};
   app.querySelectorAll("input").forEach(e=>e.onchange=upd);upd();
@@ -374,7 +385,8 @@ function setup(){
   $("go").onclick=async()=>{
     au();
     const pool=read(),num=+$("num").value;
-    const list=spread(pool,num).map((q,k)=>{const o=shuf(q[3].map((t,i)=>({t,i})));return{id:k+1,key:q[7],cat:q[0],lv:q[1],text:q[2],opts:o.map(x=>x.t),ans:o.findIndex(x=>x.i===0),expl:q[4],vq:q[5],img:q[6]}});
+    const pick=spread(pool,num);markUsed(pool,pick);
+    const list=pick.map((q,k)=>{const o=shuf(q[3].map((t,i)=>({t,i})));return{id:k+1,key:q[7],cat:q[0],lv:q[1],text:q[2],opts:o.map(x=>x.t),ans:o.findIndex(x=>x.i===0),expl:q[4],vq:q[5],img:q[6]}});
     const mode=app.querySelector("[name=mode]:checked").value;
     H={mode,list,i:-1,ph:"lobby",sec:+$("sec").value,P:{},counts:[0,0,0,0],endsAt:0,epoch:Date.now(),pick:null,rr:null,code:null,warn:"",fast:null,prevRank:{},AV:{},A:{}};
     if(mode==="lim"){const n=+app.querySelector("[name=tm]:checked").value;H.teams=n;
